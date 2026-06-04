@@ -156,7 +156,7 @@ function buildPayload(context: IExecuteFunctions, itemIndex: number, operation: 
 	];
 
 	for (const field of simpleFields) {
-		const value = context.getNodeParameter(field, itemIndex, undefined) as unknown;
+		const value = getOptionalNodeParameter(context, field, itemIndex);
 		if (value !== undefined && value !== '') {
 			payload[field === 'operationName' ? 'operation' : field] = value;
 		}
@@ -176,6 +176,21 @@ function buildPayload(context: IExecuteFunctions, itemIndex: number, operation: 
 	validatePublicMediaUrlsInPayload(payload);
 
 	return payload;
+}
+
+function getOptionalNodeParameter(context: IExecuteFunctions, field: string, itemIndex: number): unknown {
+	try {
+		return context.getNodeParameter(field, itemIndex, undefined) as unknown;
+	} catch (error) {
+		if (isMissingNodeParameterError(error)) {
+			return undefined;
+		}
+		throw error;
+	}
+}
+
+function isMissingNodeParameterError(error: unknown): boolean {
+	return error instanceof Error && error.message.includes('Could not get parameter');
 }
 
 function resolveStatusOperation(statusOperation: string | Record<string, string>, operation: string): string {
