@@ -10,6 +10,11 @@ test('package metadata is eligible for n8n community verification', () => {
 	assert.equal(packageJson.homepage, 'https://github.com/d906090-rgb/n8n-nodes-franklab#readme');
 	assert.equal(packageJson.repository.url, 'git+https://github.com/d906090-rgb/n8n-nodes-franklab.git');
 	assert.equal(packageJson.repository.directory, undefined);
+	assert.deepEqual(packageJson.author, {
+		name: 'FrankLab',
+		email: 'fedorchuk.a@apergrex.com',
+		url: 'https://franklab.ru',
+	});
 	assert.ok(packageJson.keywords.includes('n8n-community-node-package'));
 	assert.deepEqual(packageJson.dependencies, {});
 	assert.equal(packageJson.n8n.strict, true);
