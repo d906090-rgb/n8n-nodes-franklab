@@ -1,0 +1,19 @@
+{
+	"name": "FrankLab HOLST Image Info",
+	"nodes": [
+		{
+			"parameters": {
+				"operation": "submitImage",
+				"imageUrl": "https://cdn.example.com/image.png",
+				"operationName": "info",
+				"waitForCompletion": true
+			},
+			"type": "@apergrex/n8n-nodes-franklab.frankLabHolst",
+			"typeVersion": 1,
+			"position": [400, 240],
+			"id": "franklab-holst-image-info",
+			"name": "FrankLab HOLST"
+		}
+	],
+	"connections": {}
+}

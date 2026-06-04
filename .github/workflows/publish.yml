@@ -1,0 +1,31 @@
+name: Publish n8n nodes
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'n8n-nodes-franklab-v*.*.*'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish-n8n-nodes-franklab:
+    name: Publish @apergrex/n8n-nodes-franklab
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - run: npm test
+      - run: npm run scan
+      - run: npm run release
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

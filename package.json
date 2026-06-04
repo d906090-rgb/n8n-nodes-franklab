@@ -1,0 +1,59 @@
+{
+	"name": "@apergrex/n8n-nodes-franklab",
+	"version": "0.1.0",
+	"description": "Official FrankLab community nodes for n8n.",
+	"license": "MIT",
+	"homepage": "https://github.com/d906090-rgb/n8n-nodes-franklab#readme",
+	"keywords": ["n8n-community-node-package", "n8n", "franklab", "automation"],
+	"author": {
+		"name": "FrankLab"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/d906090-rgb/n8n-nodes-franklab.git"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"engines": {
+		"node": ">=20.19"
+	},
+	"scripts": {
+		"build": "n8n-node build",
+		"build:watch": "tsc --watch",
+		"dev": "n8n-node dev",
+		"lint": "n8n-node lint",
+		"lint:fix": "n8n-node lint --fix",
+		"pack:dry-run": "npm pack --dry-run",
+		"release": "n8n-node release",
+		"scan": "npm run lint && npm run pack:dry-run",
+		"scan:published": "npx @n8n/scan-community-package @apergrex/n8n-nodes-franklab",
+		"pretest": "npm run build",
+		"test": "node --test test/*.test.mjs",
+		"prepublishOnly": "n8n-node prerelease"
+	},
+	"files": ["dist", "README.md", "LICENSE", "examples"],
+	"n8n": {
+		"n8nNodesApiVersion": 1,
+		"strict": true,
+		"credentials": ["dist/credentials/FrankLabApi.credentials.js"],
+		"nodes": [
+			"dist/nodes/Holst/FrankLabHolst.node.js",
+			"dist/nodes/Kley/FrankLabKley.node.js",
+			"dist/nodes/Plastinka/FrankLabPlastinka.node.js",
+			"dist/nodes/Volna/FrankLabVolna.node.js",
+			"dist/nodes/C2pa/FrankLabC2pa.node.js"
+		]
+	},
+	"dependencies": {},
+	"devDependencies": {
+		"@n8n/node-cli": "^0.23.1",
+		"eslint": "9.32.0",
+		"prettier": "3.6.2",
+		"release-it": "^19.0.4",
+		"typescript": "5.9.2"
+	},
+	"peerDependencies": {
+		"n8n-workflow": "*"
+	}
+}
