@@ -21,8 +21,11 @@ jobs:
           node-version: 24
           registry-url: https://registry.npmjs.org
           cache: npm
-          cache-dependency-path: package-lock.json
+          cache-dependency-path: |
+            package-lock.json
+            tooling/package-lock.json
       - run: npm ci --ignore-scripts
+      - run: npm run tooling:ci
       - run: npm run build
       - run: npm test
       - run: npm run scan

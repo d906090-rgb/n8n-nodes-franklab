@@ -7,6 +7,7 @@ export class FrankLabC2pa implements INodeType {
 		displayName: 'FrankLab C2PA',
 		name: 'frankLabC2pa',
 		icon: 'file:c2pa.svg',
+		subtitle: '={{$parameter["operation"]}}',
 		group: ['transform'],
 		version: 1,
 		description: 'Manage safe FrankLab C2PA signer profiles.',
@@ -48,6 +49,10 @@ export class FrankLabC2pa implements INodeType {
 		],
 	};
 
+	// continueOnFail() is handled centrally in executeFrankLabModule() — see nodes/shared/node-utils.ts:
+	// each item runs in a try/catch that checks this.continueOnFail() and otherwise throws a
+	// NodeOperationError with { itemIndex }. The rule only scans the execute() body, so it cannot see the
+	// handling across the helper boundary (confirmed false positive).
 	async execute(this: IExecuteFunctions) {
 		return executeFrankLabModule(this, 'c2pa', 'listProfiles');
 	}

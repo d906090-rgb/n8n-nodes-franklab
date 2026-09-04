@@ -1,0 +1,21 @@
+{
+	"name": "FrankLab MOON Text to Video",
+	"nodes": [
+		{
+			"parameters": {
+				"operation": "createVideo",
+				"prompt": "A slow cinematic drone shot over a foggy pine forest at sunrise",
+				"operationMode": "text_to_video",
+				"moonModel": "moon_base",
+				"resolution": "720p",
+				"waitForCompletion": false
+			},
+			"type": "@apergrex/n8n-nodes-franklab.frankLabMoon",
+			"typeVersion": 1,
+			"position": [400, 240],
+			"id": "franklab-moon-text-to-video",
+			"name": "FrankLab MOON"
+		}
+	],
+	"connections": {}
+}

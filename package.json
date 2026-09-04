@@ -1,10 +1,15 @@
 {
 	"name": "@apergrex/n8n-nodes-franklab",
-	"version": "0.1.2",
+	"version": "0.2.0",
 	"description": "Official FrankLab community nodes for n8n.",
 	"license": "MIT",
 	"homepage": "https://github.com/d906090-rgb/n8n-nodes-franklab#readme",
-	"keywords": ["n8n-community-node-package", "n8n", "franklab", "automation"],
+	"keywords": [
+		"n8n-community-node-package",
+		"n8n",
+		"franklab",
+		"automation"
+	],
 	"author": {
 		"name": "FrankLab",
 		"email": "fedorchuk.a@apergrex.com",
@@ -21,39 +26,71 @@
 		"node": ">=20.19"
 	},
 	"scripts": {
-		"build": "n8n-node build",
+		"tooling:ci": "npm --prefix tooling ci --ignore-scripts && node tooling/link-node-cli.mjs",
+		"build": "node tooling/run-node-cli.mjs build",
 		"build:watch": "tsc --watch",
-		"dev": "n8n-node dev",
-		"lint": "n8n-node lint",
-		"lint:fix": "n8n-node lint --fix",
+		"dev": "node tooling/run-node-cli.mjs dev",
+		"lint": "node tooling/run-node-cli.mjs lint",
+		"lint:fix": "node tooling/run-node-cli.mjs lint --fix",
 		"pack:dry-run": "npm pack --dry-run",
-		"release": "n8n-node release",
+		"release": "node tooling/run-node-cli.mjs release",
 		"scan": "npm run lint && npm run pack:dry-run",
 		"scan:published": "npx @n8n/scan-community-package @apergrex/n8n-nodes-franklab",
 		"pretest": "npm run build",
 		"test": "node --test test/*.test.mjs",
-		"prepublishOnly": "n8n-node prerelease"
+		"prepublishOnly": "node tooling/run-node-cli.mjs prerelease"
 	},
-	"files": ["dist", "README.md", "LICENSE", "examples"],
+	"allowScripts": {
+		"isolated-vm": true
+	},
+	"files": [
+		"dist",
+		"!dist/tooling",
+		"README.md",
+		"LICENSE",
+		"examples"
+	],
 	"n8n": {
 		"n8nNodesApiVersion": 1,
 		"strict": true,
-		"credentials": ["dist/credentials/FrankLabApi.credentials.js"],
+		"credentials": [
+			"dist/credentials/FrankLabApi.credentials.js"
+		],
 		"nodes": [
+			"dist/nodes/Alibaba/FrankLabAlibaba.node.js",
+			"dist/nodes/Aries/FrankLabAries.node.js",
+			"dist/nodes/C2pa/FrankLabC2pa.node.js",
+			"dist/nodes/Dola/FrankLabDola.node.js",
 			"dist/nodes/Holst/FrankLabHolst.node.js",
+			"dist/nodes/HotCoffe/FrankLabHotCoffe.node.js",
+			"dist/nodes/Jupiter/FrankLabJupiter.node.js",
 			"dist/nodes/Kley/FrankLabKley.node.js",
+			"dist/nodes/Kusok/FrankLabKusok.node.js",
+			"dist/nodes/Mars/FrankLabMars.node.js",
+			"dist/nodes/Mercury/FrankLabMercury.node.js",
+			"dist/nodes/Minimax/FrankLabMinimax.node.js",
+			"dist/nodes/Moon/FrankLabMoon.node.js",
+			"dist/nodes/Neptune/FrankLabNeptune.node.js",
+			"dist/nodes/Omni/FrankLabOmni.node.js",
+			"dist/nodes/Orkestr/FrankLabOrkestr.node.js",
 			"dist/nodes/Plastinka/FrankLabPlastinka.node.js",
+			"dist/nodes/Pluto/FrankLabPluto.node.js",
+			"dist/nodes/Saturn/FrankLabSaturn.node.js",
+			"dist/nodes/Sufler/FrankLabSufler.node.js",
+			"dist/nodes/TextSticker/FrankLabTextSticker.node.js",
+			"dist/nodes/Titan/FrankLabTitan.node.js",
+			"dist/nodes/Venus/FrankLabVenus.node.js",
 			"dist/nodes/Volna/FrankLabVolna.node.js",
-			"dist/nodes/C2pa/FrankLabC2pa.node.js"
+			"dist/nodes/X/FrankLabX.node.js"
 		]
 	},
 	"dependencies": {},
 	"devDependencies": {
-		"@n8n/node-cli": "^0.23.1",
-		"eslint": "9.32.0",
-		"prettier": "3.6.2",
+		"@types/node": "18.19.130",
+		"eslint": "9.39.5",
+		"prettier": "3.9.6",
 		"release-it": "^19.0.4",
-		"typescript": "5.9.2"
+		"typescript": "5.9.3"
 	},
 	"peerDependencies": {
 		"n8n-workflow": "*"

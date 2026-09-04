@@ -1,0 +1,242 @@
+import type { IExecuteFunctions, INodeType, INodeTypeDescription, INodeProperties } from 'n8n-workflow';
+import { NodeConnectionTypes } from 'n8n-workflow';
+import { executeFrankLabModule, jobIdProperty, payloadProperty, waitProperty } from '../shared/node-utils';
+
+const musicFields: INodeProperties[] = [
+	{
+		displayName: 'Suno Operation',
+		name: 'operationName',
+		type: 'options',
+		noDataExpression: true,
+		default: 'generate',
+		options: [
+			{ name: 'Add Instrumental', value: 'add_instrumental', action: 'Add an instrumental stem' },
+			{ name: 'Add Vocals', value: 'add_vocals', action: 'Add vocals to a track' },
+			{ name: 'Extend', value: 'extend', action: 'Extend a track' },
+			{ name: 'Generate', value: 'generate', action: 'Generate a track' },
+			{ name: 'Mashup', value: 'mashup', action: 'Mashup tracks' },
+			{ name: 'Replace Section', value: 'replace_section', action: 'Replace a track section' },
+			{ name: 'Upload Cover', value: 'upload_cover', action: 'Upload a cover' },
+			{ name: 'Upload Extend', value: 'upload_extend', action: 'Upload audio to extend' },
+		],
+		displayOptions: { show: { resource: ['v1'], operation: ['music'] } },
+	},
+	{
+		displayName: 'Suno Operation',
+		name: 'operationName',
+		type: 'options',
+		noDataExpression: true,
+		default: 'lyrics',
+		options: [
+			{ name: 'Generate Lyrics', value: 'lyrics', action: 'Generate lyrics' },
+			{ name: 'Timestamped Lyrics', value: 'timestamped_lyrics', action: 'Get timestamped lyrics' },
+		],
+		displayOptions: { show: { resource: ['v1'], operation: ['lyrics'] } },
+	},
+	{
+		displayName: 'Suno Operation',
+		name: 'operationName',
+		type: 'options',
+		noDataExpression: true,
+		default: 'boost_style',
+		options: [{ name: 'Boost Style', value: 'boost_style', action: 'Boost a style' }],
+		displayOptions: { show: { resource: ['v1'], operation: ['style'] } },
+	},
+	{
+		displayName: 'Suno Operation',
+		name: 'operationName',
+		type: 'options',
+		noDataExpression: true,
+		default: 'generate_persona',
+		options: [{ name: 'Generate Persona', value: 'generate_persona', action: 'Generate a persona' }],
+		displayOptions: { show: { resource: ['v1'], operation: ['persona'] } },
+	},
+	{
+		displayName: 'Suno Operation',
+		name: 'operationName',
+		type: 'options',
+		noDataExpression: true,
+		default: 'separate_vocals',
+		options: [
+			{ name: 'Convert WAV', value: 'convert_wav', action: 'Convert a track to WAV' },
+			{ name: 'Generate MIDI', value: 'generate_midi', action: 'Generate a MIDI version' },
+			{ name: 'Separate Vocals', value: 'separate_vocals', action: 'Separate vocals' },
+		],
+		displayOptions: { show: { resource: ['v1'], operation: ['processing'] } },
+	},
+	{
+		displayName: 'Suno Operation',
+		name: 'operationName',
+		type: 'options',
+		noDataExpression: true,
+		default: 'music_video',
+		options: [
+			{ name: 'Cover Image', value: 'cover_image', action: 'Generate a cover image' },
+			{ name: 'Music Video', value: 'music_video', action: 'Generate a music video' },
+		],
+		displayOptions: { show: { resource: ['v1'], operation: ['visuals'] } },
+	},
+	{
+		displayName: 'Prompt',
+		name: 'prompt',
+		type: 'string',
+		typeOptions: { rows: 4 },
+		default: '',
+		displayOptions: { show: { operation: ['music', 'lyrics', 'generate', 'extend', 'lyricsV2', 'timestampedLyrics', 'lyriaMusic'] } },
+	},
+	{
+		displayName: 'Model',
+		name: 'model',
+		type: 'string',
+		default: '',
+		description: 'Optional model ID for the operation',
+		displayOptions: { show: { operation: ['generate', 'extend', 'lyriaMusic'] } },
+	},
+	{
+		displayName: 'Style',
+		name: 'style',
+		type: 'string',
+		default: '',
+		displayOptions: { show: { operation: ['generate', 'extend'] } },
+	},
+	{
+		displayName: 'Title',
+		name: 'title',
+		type: 'string',
+		default: '',
+		displayOptions: { show: { operation: ['generate', 'extend'] } },
+	},
+	{
+		displayName: 'Instrumental',
+		name: 'instrumental',
+		type: 'boolean',
+		default: false,
+		displayOptions: { show: { operation: ['generate', 'lyriaMusic'] } },
+	},
+	{
+		displayName: 'Custom Mode',
+		name: 'customMode',
+		type: 'boolean',
+		default: false,
+		displayOptions: { show: { operation: ['generate'] } },
+	},
+	{
+		displayName: 'Lyrics',
+		name: 'lyrics',
+		type: 'string',
+		typeOptions: { rows: 4 },
+		default: '',
+		displayOptions: { show: { operation: ['lyricsV2', 'lyriaMusic'] } },
+	},
+];
+
+const pollKindProperty: INodeProperties = {
+	displayName: 'Poll Kind',
+	name: 'pollKind',
+	type: 'options',
+	noDataExpression: true,
+	default: 'generate',
+	options: [
+		{ name: 'Cover', value: 'cover', action: 'Poll a cover task' },
+		{ name: 'Generate', value: 'generate', action: 'Poll a generate task' },
+		{ name: 'Lyrics', value: 'lyrics', action: 'Poll a lyrics task' },
+		{ name: 'MIDI', value: 'midi', action: 'Poll a MIDI task' },
+		{ name: 'MP4', value: 'mp4', action: 'Poll an MP4 task' },
+		{ name: 'Vocal Removal', value: 'vocal-removal', action: 'Poll a vocal removal task' },
+		{ name: 'WAV', value: 'wav', action: 'Poll a WAV task' },
+	],
+	displayOptions: { show: { resource: ['v1'], operation: ['getTaskV1'] } },
+};
+
+export class FrankLabOrkestr implements INodeType {
+	// continueOnFail() is handled centrally in executeFrankLabModule.
+	description: INodeTypeDescription = {
+		displayName: 'FrankLab ORKESTR',
+		name: 'frankLabOrkestr',
+		icon: 'file:orkestr.svg',
+		subtitle: '={{$parameter["operation"]}}',
+		group: ['transform'],
+		version: 1,
+		description: 'Generate and process music, lyrics, vocals, and audio with FrankLab ORKESTR (Suno v1 and ORKESTR v2).',
+		defaults: {
+			name: 'FrankLab ORKESTR',
+		},
+		inputs: [NodeConnectionTypes.Main],
+		outputs: [NodeConnectionTypes.Main],
+		credentials: [
+			{
+				name: 'frankLabApi',
+				required: true,
+			},
+		],
+		usableAsTool: true,
+		properties: [
+			{
+				displayName: 'API Version',
+				name: 'resource',
+				type: 'options',
+				noDataExpression: true,
+				default: 'v2',
+				options: [
+					{ name: 'V1 (Suno)', value: 'v1', action: 'Use the v1 Suno envelope endpoints' },
+					{ name: 'V2', value: 'v2', action: 'Use the ORKESTR v2 endpoints' },
+				],
+			},
+			{
+				displayName: 'Operation',
+				name: 'operation',
+				type: 'options',
+				noDataExpression: true,
+				default: 'music',
+				displayOptions: { show: { resource: ['v1'] } },
+				options: [
+					{ name: 'Get Task Status', value: 'getTaskV1', action: 'Get a v1 task status' },
+					{ name: 'Lyrics', value: 'lyrics', action: 'Generate lyrics v1' },
+					{ name: 'Music', value: 'music', action: 'Generate music v1' },
+					{ name: 'Persona', value: 'persona', action: 'Generate a persona v1' },
+					{ name: 'Processing', value: 'processing', action: 'Process audio v1' },
+					{ name: 'Style', value: 'style', action: 'Describe a style v1' },
+					{ name: 'Visuals', value: 'visuals', action: 'Generate visuals v1' },
+				],
+			},
+			{
+				displayName: 'Operation',
+				name: 'operation',
+				type: 'options',
+				noDataExpression: true,
+				default: 'generate',
+				displayOptions: { show: { resource: ['v2'] } },
+				options: [
+					{ name: 'Add Instrumental', value: 'addInstrumental', action: 'Add an instrumental stem' },
+					{ name: 'Add Vocals', value: 'addVocals', action: 'Add vocals to a track' },
+					{ name: 'Boost Style', value: 'boostStyle', action: 'Boost a style' },
+					{ name: 'Convert WAV', value: 'convertWav', action: 'Convert a track to WAV' },
+					{ name: 'Cover Image', value: 'coverImage', action: 'Generate a cover image' },
+					{ name: 'Extend', value: 'extend', action: 'Extend a track' },
+					{ name: 'Generate', value: 'generate', action: 'Generate music' },
+					{ name: 'Generate MIDI', value: 'generateMidi', action: 'Generate a MIDI version' },
+					{ name: 'Generate Persona', value: 'generatePersona', action: 'Generate a persona' },
+					{ name: 'Get Task Status', value: 'getTaskV2', action: 'Get a v2 task status' },
+					{ name: 'Lyria Music', value: 'lyriaMusic', action: 'Generate music with google lyria' },
+					{ name: 'Lyrics', value: 'lyricsV2', action: 'Generate lyrics' },
+					{ name: 'Mashup', value: 'mashup', action: 'Mashup tracks' },
+					{ name: 'Music Video', value: 'musicVideo', action: 'Generate a music video' },
+					{ name: 'Replace Section', value: 'replaceSection', action: 'Replace a track section' },
+					{ name: 'Separate Vocals', value: 'separateVocals', action: 'Separate vocals' },
+					{ name: 'Timestamped Lyrics', value: 'timestampedLyrics', action: 'Get timestamped lyrics' },
+					{ name: 'Upload Cover', value: 'uploadCover', action: 'Upload a cover' },
+					{ name: 'Upload Extend', value: 'uploadExtend', action: 'Upload audio to extend' },
+				],
+			},
+			pollKindProperty,
+			...musicFields,
+			jobIdProperty,
+			payloadProperty,
+			waitProperty,
+		],
+	};
+
+	async execute(this: IExecuteFunctions) {
+		return executeFrankLabModule(this, 'orkestr', { default: 'getTaskV2' });
+	}
+}

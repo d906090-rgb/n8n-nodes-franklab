@@ -37,7 +37,7 @@ export interface FrankLabClient {
 	poll(endpointKey: string, taskId: string, options?: PollOptions): Promise<Record<string, unknown>>;
 }
 
-const PATH_PARAM_NAMES = ['jobId', 'taskId', 'profileId', 'dubbingId', 'languageCode'] as const;
+const PATH_PARAM_NAMES = ['jobId', 'taskId', 'profileId', 'dubbingId', 'languageCode', 'file_id', 'billing_task_id', 'pollKind', 'id', 'voiceId'] as const;
 
 export function createFrankLabClient(options: FrankLabClientOptions): FrankLabClient {
 	const baseUrl = normalizeBaseUrl(options.baseUrl);
@@ -57,7 +57,12 @@ export function createFrankLabClient(options: FrankLabClientOptions): FrankLabCl
 			let lastResult: Record<string, unknown> = {};
 
 			for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-				lastResult = await requestEndpoint(getEndpoint(endpointKey), baseUrl, apiKey, options.fetch, { jobId: taskId, taskId, dubbingId: taskId });
+				lastResult = await requestEndpoint(getEndpoint(endpointKey), baseUrl, apiKey, options.fetch, {
+					jobId: taskId,
+					taskId,
+					dubbingId: taskId,
+					billing_task_id: taskId,
+				});
 				if (!lastResult.taskId) lastResult.taskId = taskId;
 				const status = lastResult.status;
 				if (isTerminalStatus(status)) {
@@ -83,7 +88,17 @@ async function requestEndpoint(
 	fetchTransport: FetchTransport,
 	input: RequestBody,
 ): Promise<Record<string, unknown>> {
-	const url = buildApiUrl(baseUrl, endpoint.path, input);
+	let url = buildApiUrl(baseUrl, endpoint.path, input);
+	if (endpoint.method === 'GET' && endpoint.queryFields?.length) {
+		const search = new URLSearchParams();
+		for (const field of endpoint.queryFields) {
+			const value = input[field];
+			if (value === undefined || value === null || value === '') continue;
+			search.set(field, Array.isArray(value) ? value.map(String).join(',') : String(value));
+		}
+		const queryString = search.toString();
+		if (queryString) url = `${url}?${queryString}`;
+	}
 	const headers: HeadersMap = {
 		Accept: 'application/json',
 	};
@@ -133,6 +148,14 @@ function buildBody(endpoint: EndpointDefinition, input: RequestBody): RequestBod
 		body.action = 'generate_self_signed';
 	}
 
+	if (endpoint.bodyTransform === 'wrapOperationPayload') {
+		const { operation: wrappedOperation, ...payload } = body;
+		return {
+			operation: typeof wrappedOperation === 'string' && wrappedOperation ? wrappedOperation : 'generate',
+			payload,
+		};
+	}
+
 	return body;
 }
 
@@ -155,7 +178,8 @@ function extractOutput(endpoint: EndpointDefinition, body: unknown, input: Reque
 	const data = isRecord(rawData) ? rawData : {};
 	const result = isRecord(data.result) ? data.result : data;
 	const status = result.task_status ?? result.status ?? data.status ?? root.status;
-	const taskId = result.task_id ?? result.taskId ?? data.taskId ?? input.taskId ?? input.jobId ?? input.dubbingId;
+	const taskId =
+		result.task_id ?? result.taskId ?? result.billing_task_id ?? data.taskId ?? data.billing_task_id ?? input.taskId ?? input.jobId ?? input.dubbingId;
 
 	if (endpoint.outputExtractor === 'list-result') {
 		const items = Array.isArray(rawData) ? rawData : Array.isArray(result.items) ? result.items : Array.isArray(result.profiles) ? result.profiles : [];
