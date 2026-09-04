@@ -1,6 +1,31 @@
-export type FrankLabModule = 'holst' | 'kley' | 'plastinka' | 'volna' | 'c2pa';
+export type FrankLabModule =
+	| 'holst'
+	| 'kley'
+	| 'plastinka'
+	| 'volna'
+	| 'c2pa'
+	| 'sufler'
+	| 'textSticker'
+	| 'orkestr'
+	| 'jupiter'
+	| 'mars'
+	| 'saturn'
+	| 'moon'
+	| 'venus'
+	| 'x'
+	| 'minimax'
+	| 'dola'
+	| 'alibaba'
+	| 'omni'
+	| 'kusok'
+	| 'mercury'
+	| 'neptune'
+	| 'pluto'
+	| 'aries'
+	| 'titan'
+	| 'hotCoffe';
 export type AuthHeader = 'Authorization' | 'X-API-Key';
-export type HttpMethod = 'GET' | 'POST';
+export type HttpMethod = 'GET' | 'POST' | 'DELETE';
 export type ResponseEnvelope = 'successData' | 'codeData';
 
 export interface EndpointDefinition {
@@ -19,6 +44,10 @@ export interface EndpointDefinition {
 	outputExtractor: string;
 	costFields: readonly string[];
 	redactionFields: readonly string[];
+	/** Wraps the flat body as `{ operation, payload }` (make/orkestr v1 envelope). */
+	bodyTransform?: 'wrapOperationPayload';
+	/** GET-only: input keys appended as query-string parameters. */
+	queryFields?: readonly string[];
 }
 
 export const SUCCESS_STATUSES = ['completed', 'success', 'succeed', 'succeeded', 'done'] as const;
@@ -37,6 +66,117 @@ const VOLNA_OUTPUT = 'volna-result';
 
 function endpoint(definition: EndpointDefinition): EndpointDefinition {
 	return definition;
+}
+
+/** Partner jobs-controller family: Bearer auth, `{ success, data }` envelope. */
+function jobsEndpoint(
+	module: FrankLabModule,
+	operation: string,
+	method: HttpMethod,
+	path: string,
+	requestShape: string,
+	options: { guard?: string; outputExtractor?: string; costFields?: readonly string[]; bodyTransform?: 'wrapOperationPayload' } = {},
+): EndpointDefinition {
+	return endpoint({
+		key: `${module}.${operation}`,
+		module,
+		operation,
+		routeFamily: 'franklab-partner-jobs',
+		method,
+		path,
+		authHeader: 'Authorization',
+		guard: options.guard ?? 'PartnerSessionOrApiKeyGuard',
+		requestShape,
+		responseEnvelope: 'successData',
+		statusPath: 'data.status',
+		terminalStatuses: TERMINAL_STATUSES,
+		outputExtractor: options.outputExtractor ?? JOB_OUTPUT,
+		costFields: options.costFields ?? COST_FIELDS,
+		redactionFields: BEARER_REDACTION,
+		bodyTransform: options.bodyTransform,
+	});
+}
+
+/** Read-only text-sticker integration option lists: Bearer auth, no cost fields. */
+function integrationListEndpoint(module: FrankLabModule, operation: string, path: string, requestShape: string): EndpointDefinition {
+	return endpoint({
+		key: `${module}.${operation}`,
+		module,
+		operation,
+		routeFamily: 'franklab-text-sticker-integrations',
+		method: 'GET',
+		path,
+		authHeader: 'Authorization',
+		guard: 'PartnerSessionOrApiKeyGuard',
+		requestShape,
+		responseEnvelope: 'successData',
+		statusPath: 'data.status',
+		terminalStatuses: TERMINAL_STATUSES,
+		outputExtractor: LIST_OUTPUT,
+		costFields: [],
+		redactionFields: BEARER_REDACTION,
+	});
+}
+
+/** `/v1` proxy family: X-API-Key auth, `{ code, message, data }` envelope. */
+function proxyV1Endpoint(
+	module: FrankLabModule,
+	routeFamily: string,
+	operation: string,
+	method: HttpMethod,
+	path: string,
+	requestShape: string,
+	options: { outputExtractor?: string; queryFields?: readonly string[]; guard?: string; costFields?: readonly string[] } = {},
+): EndpointDefinition {
+	return endpoint({
+		key: `${module}.${operation}`,
+		module,
+		operation,
+		routeFamily,
+		method,
+		path,
+		authHeader: 'X-API-Key',
+		guard: options.guard ?? 'ApiKeyGuard',
+		requestShape,
+		responseEnvelope: 'codeData',
+		statusPath: 'data.status',
+		terminalStatuses: TERMINAL_STATUSES,
+		outputExtractor: options.outputExtractor ?? JOB_OUTPUT,
+		costFields: options.costFields ?? COST_FIELDS,
+		redactionFields: API_KEY_REDACTION,
+		queryFields: options.queryFields,
+	});
+}
+
+/** `make/<capability>` family: X-API-Key auth, `{ code, msg, data }` envelope. */
+function makeCapabilityEndpoint(
+	module: FrankLabModule,
+	routeFamily: string,
+	operation: string,
+	method: HttpMethod,
+	path: string,
+	requestShape: string,
+	options: { guard?: string; outputExtractor?: string; costFields?: readonly string[]; bodyTransform?: 'wrapOperationPayload'; queryFields?: readonly string[] } = {},
+): EndpointDefinition {
+	return endpoint({
+		key: `${module}.${operation}`,
+		module,
+		operation,
+		routeFamily,
+		method,
+		path,
+		authHeader: 'X-API-Key',
+		guard: options.guard ?? 'ApiKeyGuard',
+		requestShape,
+		responseEnvelope: 'codeData',
+		statusPath: 'data.status',
+		terminalStatuses: TERMINAL_STATUSES,
+		outputExtractor: options.outputExtractor ?? JOB_OUTPUT,
+		costFields: options.costFields ?? COST_FIELDS,
+		redactionFields: API_KEY_REDACTION,
+		bodyTransform: options.bodyTransform,
+		queryFields: options.queryFields,
+	});
 }
 
 export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
@@ -500,6 +640,7 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 		redactionFields: API_KEY_REDACTION,
 	}),
 	'c2pa.listProfiles': endpoint({
+		// eslint-disable-next-line @n8n/community-nodes/no-hardcoded-secrets -- registry endpoint id, not a credential
 		key: 'c2pa.listProfiles',
 		module: 'c2pa',
 		operation: 'listProfiles',
@@ -517,6 +658,7 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 		redactionFields: BEARER_REDACTION,
 	}),
 	'c2pa.profileOptions': endpoint({
+		// eslint-disable-next-line @n8n/community-nodes/no-hardcoded-secrets -- registry endpoint id, not a credential
 		key: 'c2pa.profileOptions',
 		module: 'c2pa',
 		operation: 'profileOptions',
@@ -534,6 +676,7 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 		redactionFields: BEARER_REDACTION,
 	}),
 	'c2pa.generateSelfSigned': endpoint({
+		// eslint-disable-next-line @n8n/community-nodes/no-hardcoded-secrets -- registry endpoint id, not a credential
 		key: 'c2pa.generateSelfSigned',
 		module: 'c2pa',
 		operation: 'generateSelfSigned',
@@ -551,6 +694,7 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 		redactionFields: BEARER_REDACTION,
 	}),
 	'c2pa.revokeProfile': endpoint({
+		// eslint-disable-next-line @n8n/community-nodes/no-hardcoded-secrets -- registry endpoint id, not a credential
 		key: 'c2pa.revokeProfile',
 		module: 'c2pa',
 		operation: 'revokeProfile',
@@ -567,6 +711,164 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 		costFields: [],
 		redactionFields: BEARER_REDACTION,
 	}),
+	'sufler.subtitles': jobsEndpoint('sufler', 'subtitles', 'POST', '/franklab/jobs/subtitles', 'videoUrl plus caption engine and styling fields'),
+	'sufler.getStatus': jobsEndpoint('sufler', 'getStatus', 'GET', '/franklab/jobs/:jobId', 'jobId path parameter'),
+	'textSticker.overlay': jobsEndpoint('textSticker', 'overlay', 'POST', '/franklab/jobs/overlay', 'videoUrl plus overlay payload'),
+	'textSticker.getStatus': jobsEndpoint('textSticker', 'getStatus', 'GET', '/franklab/jobs/:jobId', 'jobId path parameter'),
+	'textSticker.listFonts': integrationListEndpoint('textSticker', 'listFonts', '/franklab/integrations/text-sticker/fonts', 'none'),
+	'textSticker.listStickers': integrationListEndpoint('textSticker', 'listStickers', '/franklab/integrations/text-sticker/stickers', 'none'),
+	'textSticker.listEmojis': integrationListEndpoint('textSticker', 'listEmojis', '/franklab/integrations/text-sticker/emojis', 'none'),
+	'textSticker.listSubtitleTemplates': integrationListEndpoint('textSticker', 'listSubtitleTemplates', '/franklab/integrations/text-sticker/subtitle-templates', 'none'),
+	'textSticker.listVideoEffects': integrationListEndpoint('textSticker', 'listVideoEffects', '/franklab/integrations/text-sticker/video-effects', 'none'),
+	'textSticker.listTransitions': integrationListEndpoint('textSticker', 'listTransitions', '/franklab/integrations/text-sticker/transitions', 'none'),
+	'textSticker.listTransitionSounds': integrationListEndpoint('textSticker', 'listTransitionSounds', '/franklab/integrations/text-sticker/transition-sounds', 'none'),
+	'textSticker.listSafeZoneOptions': integrationListEndpoint('textSticker', 'listSafeZoneOptions', '/franklab/integrations/text-sticker/safe-zone-options', 'none'),
+	'textSticker.listAspectRatios': integrationListEndpoint('textSticker', 'listAspectRatios', '/franklab/integrations/text-sticker/aspect-ratios', 'none'),
+	'textSticker.listResizePresets': integrationListEndpoint('textSticker', 'listResizePresets', '/franklab/integrations/text-sticker/resize-presets', 'none'),
+	'orkestr.music': makeCapabilityEndpoint('orkestr', 'franklab-orkestr-v1', 'music', 'POST', '/make/orkestr/music', 'Suno operation and payload envelope', { bodyTransform: 'wrapOperationPayload' }),
+	'orkestr.lyrics': makeCapabilityEndpoint('orkestr', 'franklab-orkestr-v1', 'lyrics', 'POST', '/make/orkestr/lyrics', 'Suno operation and payload envelope', { bodyTransform: 'wrapOperationPayload' }),
+	'orkestr.style': makeCapabilityEndpoint('orkestr', 'franklab-orkestr-v1', 'style', 'POST', '/make/orkestr/style', 'style payload envelope', { bodyTransform: 'wrapOperationPayload' }),
+	'orkestr.persona': makeCapabilityEndpoint('orkestr', 'franklab-orkestr-v1', 'persona', 'POST', '/make/orkestr/persona', 'persona payload envelope', { bodyTransform: 'wrapOperationPayload' }),
+	'orkestr.processing': makeCapabilityEndpoint('orkestr', 'franklab-orkestr-v1', 'processing', 'POST', '/make/orkestr/processing', 'Suno processing operation and payload envelope', { bodyTransform: 'wrapOperationPayload' }),
+	'orkestr.visuals': makeCapabilityEndpoint('orkestr', 'franklab-orkestr-v1', 'visuals', 'POST', '/make/orkestr/visuals', 'Suno visuals operation and payload envelope', { bodyTransform: 'wrapOperationPayload' }),
+	'orkestr.getTaskV1': makeCapabilityEndpoint('orkestr', 'franklab-orkestr-v1', 'getTaskV1', 'GET', '/make/orkestr/status/:pollKind/:taskId', 'pollKind and taskId path parameters'),
+	'orkestr.generate': makeCapabilityEndpoint('orkestr', 'franklab-orkestr-v2', 'generate', 'POST', '/make/orkestr/v2/generate', 'music generation payload', { guard: 'OrkestrV2ApiKeyGuard' }),
+	'orkestr.extend': makeCapabilityEndpoint('orkestr', 'franklab-orkestr-v2', 'extend', 'POST', '/make/orkestr/v2/extend', 'track extend payload', { guard: 'OrkestrV2ApiKeyGuard' }),
+	'orkestr.uploadCover': makeCapabilityEndpoint('orkestr', 'franklab-orkestr-v2', 'uploadCover', 'POST', '/make/orkestr/v2/upload-cover', 'cover upload payload', { guard: 'OrkestrV2ApiKeyGuard' }),
+	'orkestr.uploadExtend': makeCapabilityEndpoint('orkestr', 'franklab-orkestr-v2', 'uploadExtend', 'POST', '/make/orkestr/v2/upload-extend', 'extend upload payload', { guard: 'OrkestrV2ApiKeyGuard' }),
+	'orkestr.addInstrumental': makeCapabilityEndpoint('orkestr', 'franklab-orkestr-v2', 'addInstrumental', 'POST', '/make/orkestr/v2/add-instrumental', 'add instrumental payload', { guard: 'OrkestrV2ApiKeyGuard' }),
+	'orkestr.addVocals': makeCapabilityEndpoint('orkestr', 'franklab-orkestr-v2', 'addVocals', 'POST', '/make/orkestr/v2/add-vocals', 'add vocals payload', { guard: 'OrkestrV2ApiKeyGuard' }),
+	'orkestr.replaceSection': makeCapabilityEndpoint('orkestr', 'franklab-orkestr-v2', 'replaceSection', 'POST', '/make/orkestr/v2/replace-section', 'replace section payload', { guard: 'OrkestrV2ApiKeyGuard' }),
+	'orkestr.mashup': makeCapabilityEndpoint('orkestr', 'franklab-orkestr-v2', 'mashup', 'POST', '/make/orkestr/v2/mashup', 'mashup payload', { guard: 'OrkestrV2ApiKeyGuard' }),
+	'orkestr.lyricsV2': makeCapabilityEndpoint('orkestr', 'franklab-orkestr-v2', 'lyricsV2', 'POST', '/make/orkestr/v2/lyrics', 'lyrics generation payload', { guard: 'OrkestrV2ApiKeyGuard' }),
+	'orkestr.timestampedLyrics': makeCapabilityEndpoint('orkestr', 'franklab-orkestr-v2', 'timestampedLyrics', 'POST', '/make/orkestr/v2/timestamped-lyrics', 'timestamped lyrics payload', { guard: 'OrkestrV2ApiKeyGuard' }),
+	'orkestr.separateVocals': makeCapabilityEndpoint('orkestr', 'franklab-orkestr-v2', 'separateVocals', 'POST', '/make/orkestr/v2/separate-vocals', 'vocal separation payload', { guard: 'OrkestrV2ApiKeyGuard' }),
+	'orkestr.generateMidi': makeCapabilityEndpoint('orkestr', 'franklab-orkestr-v2', 'generateMidi', 'POST', '/make/orkestr/v2/generate-midi', 'MIDI generation payload', { guard: 'OrkestrV2ApiKeyGuard' }),
+	'orkestr.convertWav': makeCapabilityEndpoint('orkestr', 'franklab-orkestr-v2', 'convertWav', 'POST', '/make/orkestr/v2/convert-wav', 'WAV conversion payload', { guard: 'OrkestrV2ApiKeyGuard' }),
+	'orkestr.musicVideo': makeCapabilityEndpoint('orkestr', 'franklab-orkestr-v2', 'musicVideo', 'POST', '/make/orkestr/v2/music-video', 'music video payload', { guard: 'OrkestrV2ApiKeyGuard' }),
+	'orkestr.coverImage': makeCapabilityEndpoint('orkestr', 'franklab-orkestr-v2', 'coverImage', 'POST', '/make/orkestr/v2/cover-image', 'cover image payload', { guard: 'OrkestrV2ApiKeyGuard' }),
+	'orkestr.boostStyle': makeCapabilityEndpoint('orkestr', 'franklab-orkestr-v2', 'boostStyle', 'POST', '/make/orkestr/v2/boost-style', 'boost style payload', { guard: 'OrkestrV2ApiKeyGuard' }),
+	'orkestr.generatePersona': makeCapabilityEndpoint('orkestr', 'franklab-orkestr-v2', 'generatePersona', 'POST', '/make/orkestr/v2/generate-persona', 'persona generation payload', { guard: 'OrkestrV2ApiKeyGuard' }),
+	'orkestr.lyriaMusic': makeCapabilityEndpoint('orkestr', 'franklab-orkestr-v2', 'lyriaMusic', 'POST', '/make/orkestr/v2/lyria-music', 'Google Lyria music payload', { guard: 'OrkestrV2ApiKeyGuard' }),
+	'orkestr.getTaskV2': makeCapabilityEndpoint('orkestr', 'franklab-orkestr-v2', 'getTaskV2', 'GET', '/make/orkestr/v2/tasks/:taskId', 'taskId path parameter', { guard: 'OrkestrV2ApiKeyGuard' }),
+	'jupiter.omniImage': proxyV1Endpoint('jupiter', 'franklab-jupiter', 'omniImage', 'POST', '/v1/images/omni-image', 'image generation payload'),
+	'jupiter.seedreamImage': proxyV1Endpoint('jupiter', 'franklab-jupiter', 'seedreamImage', 'POST', '/v1/images/seedream-image', 'seedream image payload'),
+	'jupiter.getOmniStatus': proxyV1Endpoint('jupiter', 'franklab-jupiter', 'getOmniStatus', 'GET', '/v1/images/omni-image/:taskId', 'taskId path parameter'),
+	'jupiter.getSeedreamStatus': proxyV1Endpoint('jupiter', 'franklab-jupiter', 'getSeedreamStatus', 'GET', '/v1/images/seedream-image/:taskId', 'taskId path parameter'),
+	'jupiter.recraftImage': proxyV1Endpoint('jupiter', 'franklab-jupiter', 'recraftImage', 'POST', '/v1/recraft/create-task', 'Recraft task payload'),
+	'jupiter.getRecraftStatus': proxyV1Endpoint('jupiter', 'franklab-jupiter', 'getRecraftStatus', 'GET', '/v1/recraft/record-info', 'taskId query parameter', { queryFields: ['taskId'] }),
+	'mars.textToVideo': proxyV1Endpoint('mars', 'franklab-mars', 'textToVideo', 'POST', '/v1/videos/text2video', 'text-to-video payload'),
+	'mars.imageToVideo': proxyV1Endpoint('mars', 'franklab-mars', 'imageToVideo', 'POST', '/v1/videos/image2video', 'image-to-video payload'),
+	'mars.effects': proxyV1Endpoint('mars', 'franklab-mars', 'effects', 'POST', '/v1/videos/effects', 'video effects payload'),
+	'mars.motionControl': proxyV1Endpoint('mars', 'franklab-mars', 'motionControl', 'POST', '/v1/videos/motion-control', 'motion control payload'),
+	'mars.getTextStatus': proxyV1Endpoint('mars', 'franklab-mars', 'getTextStatus', 'GET', '/v1/videos/text2video/:taskId', 'taskId path parameter'),
+	'mars.getImageStatus': proxyV1Endpoint('mars', 'franklab-mars', 'getImageStatus', 'GET', '/v1/videos/image2video/:taskId', 'taskId path parameter'),
+	'mars.getEffectsStatus': proxyV1Endpoint('mars', 'franklab-mars', 'getEffectsStatus', 'GET', '/v1/videos/effects/:taskId', 'taskId path parameter'),
+	'mars.getMotionStatus': proxyV1Endpoint('mars', 'franklab-mars', 'getMotionStatus', 'GET', '/v1/videos/motion-control/:taskId', 'taskId path parameter'),
+	'saturn.video': proxyV1Endpoint('saturn', 'franklab-saturn', 'video', 'POST', '/v1/videos/saturn', 'SATURN video payload'),
+	'saturn.turboTextToVideo': proxyV1Endpoint('saturn', 'franklab-saturn', 'turboTextToVideo', 'POST', '/v1/videos/saturn-turbo/text-to-video', 'SATURN Turbo text-to-video payload'),
+	'saturn.turboImageToVideo': proxyV1Endpoint('saturn', 'franklab-saturn', 'turboImageToVideo', 'POST', '/v1/videos/saturn-turbo/image-to-video', 'SATURN Turbo image-to-video payload'),
+	'saturn.getVideoStatus': proxyV1Endpoint('saturn', 'franklab-saturn', 'getVideoStatus', 'GET', '/v1/videos/saturn/:taskId', 'taskId path parameter'),
+	'saturn.getTurboStatus': proxyV1Endpoint('saturn', 'franklab-saturn', 'getTurboStatus', 'GET', '/v1/videos/saturn-turbo/:taskId', 'taskId path parameter'),
+	'moon.createVideo': makeCapabilityEndpoint('moon', 'franklab-moon', 'createVideo', 'POST', '/make/moon/videos', 'Moon video task payload'),
+	'moon.estimate': makeCapabilityEndpoint('moon', 'franklab-moon', 'estimate', 'POST', '/make/moon/estimate', 'estimate-only payload, returns estimated cost without submitting'),
+	'moon.getStatus': makeCapabilityEndpoint('moon', 'franklab-moon', 'getStatus', 'GET', '/make/moon/status/:taskId', 'taskId path parameter'),
+	'venus.avatarVideo': proxyV1Endpoint('venus', 'franklab-venus', 'avatarVideo', 'POST', '/v1/videos/avatar/image2video', 'avatar image and sound payload'),
+	'venus.getStatus': proxyV1Endpoint('venus', 'franklab-venus', 'getStatus', 'GET', '/v1/videos/avatar/image2video/:taskId', 'taskId path parameter'),
+	'x.imagineVideo': proxyV1Endpoint('x', 'franklab-x', 'imagineVideo', 'POST', '/v1/videos/xai', 'xAI Imagine video payload'),
+	'x.imagineImage': proxyV1Endpoint('x', 'franklab-x', 'imagineImage', 'POST', '/v1/images/xai-imagine', 'xAI Imagine image payload'),
+	'x.getVideoStatus': proxyV1Endpoint('x', 'franklab-x', 'getVideoStatus', 'GET', '/v1/videos/xai/:taskId', 'taskId path parameter'),
+	'x.getImageStatus': proxyV1Endpoint('x', 'franklab-x', 'getImageStatus', 'GET', '/v1/images/xai-imagine/:taskId', 'taskId path parameter'),
+	'minimax.createVideo': makeCapabilityEndpoint('minimax', 'franklab-minimax', 'createVideo', 'POST', '/make/minimax/videos', 'MiniMax H3 video payload with idempotency key', { guard: 'ApiKeyGuard + partner throttlers' }),
+	'minimax.getTask': makeCapabilityEndpoint('minimax', 'franklab-minimax', 'getTask', 'GET', '/make/minimax/videos/:taskId', 'taskId path parameter', { guard: 'ApiKeyGuard + partner throttlers' }),
+	'minimax.listVideos': makeCapabilityEndpoint('minimax', 'franklab-minimax', 'listVideos', 'GET', '/make/minimax/videos', 'optional page_num and page_size query parameters', { guard: 'ApiKeyGuard + partner throttlers', outputExtractor: LIST_OUTPUT, costFields: [], queryFields: ['page_num', 'page_size'] }),
+	'minimax.taskAction': makeCapabilityEndpoint('minimax', 'franklab-minimax', 'taskAction', 'POST', '/make/minimax/videos/:taskId/action', 'taskId path parameter and action body', { guard: 'ApiKeyGuard + partner throttlers', costFields: [] }),
+	'minimax.idempotencyKey': makeCapabilityEndpoint('minimax', 'franklab-minimax', 'idempotencyKey', 'POST', '/make/minimax/idempotency-key', 'none', { guard: 'ApiKeyGuard + partner throttlers', outputExtractor: PROFILE_OUTPUT, costFields: [] }),
+	'dola.generate': makeCapabilityEndpoint('dola', 'franklab-dola', 'generate', 'POST', '/make/dola/generate', 'LLM prompt payload', { guard: 'DolaApiKeyGuard' }),
+	'dola.listModels': makeCapabilityEndpoint('dola', 'franklab-dola', 'listModels', 'GET', '/make/dola/models', 'none', { guard: 'DolaApiKeyGuard', outputExtractor: LIST_OUTPUT, costFields: [] }),
+	'dola.fileFromUrl': makeCapabilityEndpoint('dola', 'franklab-dola', 'fileFromUrl', 'POST', '/make/dola/files/from-url', 'public file URL payload', { guard: 'DolaApiKeyGuard', outputExtractor: PROFILE_OUTPUT, costFields: [] }),
+	'dola.listFiles': makeCapabilityEndpoint('dola', 'franklab-dola', 'listFiles', 'GET', '/make/dola/files', 'none', { guard: 'DolaApiKeyGuard', outputExtractor: LIST_OUTPUT, costFields: [] }),
+	'dola.getFile': makeCapabilityEndpoint('dola', 'franklab-dola', 'getFile', 'GET', '/make/dola/files/:file_id', 'file_id path parameter', { guard: 'DolaApiKeyGuard', outputExtractor: PROFILE_OUTPUT, costFields: [] }),
+	'dola.deleteFile': makeCapabilityEndpoint('dola', 'franklab-dola', 'deleteFile', 'DELETE', '/make/dola/files/:file_id', 'file_id path parameter', { guard: 'DolaApiKeyGuard', outputExtractor: PROFILE_OUTPUT, costFields: [] }),
+	'dola.getTask': makeCapabilityEndpoint('dola', 'franklab-dola', 'getTask', 'GET', '/make/dola/tasks/:billing_task_id', 'billing_task_id path parameter', { guard: 'DolaApiKeyGuard' }),
+	'alibaba.generateImage': makeCapabilityEndpoint('alibaba', 'franklab-alibaba', 'generateImage', 'POST', '/make/alibaba/images', 'Z-Image generation payload'),
+	'alibaba.generateVideo': makeCapabilityEndpoint('alibaba', 'franklab-alibaba', 'generateVideo', 'POST', '/make/alibaba/videos', 'HappyHorse video payload'),
+	'alibaba.estimate': makeCapabilityEndpoint('alibaba', 'franklab-alibaba', 'estimate', 'POST', '/make/alibaba/estimate', 'estimate-only payload, returns estimated cost without submitting', { costFields: [] }),
+	'alibaba.getStatus': makeCapabilityEndpoint('alibaba', 'franklab-alibaba', 'getStatus', 'GET', '/make/alibaba/status/:taskId', 'taskId path parameter'),
+
+	// OMNI — Google provider surface (Gemini Omni / Veo), distinct from Kling-backed SATURN.
+	'omni.info': makeCapabilityEndpoint('omni', 'franklab-omni', 'info', 'GET', '/make/omni', 'none', { outputExtractor: PROFILE_OUTPUT, costFields: [] }),
+	'omni.createVideo': makeCapabilityEndpoint('omni', 'franklab-omni', 'createVideo', 'POST', '/make/omni/videos', 'Google Omni/Veo video payload'),
+	'omni.getStatus': makeCapabilityEndpoint('omni', 'franklab-omni', 'getStatus', 'GET', '/make/omni/status/:taskId', 'taskId path parameter'),
+	'omni.videoOmni': proxyV1Endpoint('omni', 'franklab-omni', 'videoOmni', 'POST', '/v1/videos/omni-video', 'Google omni video payload'),
+	'omni.getVideoOmniStatus': proxyV1Endpoint('omni', 'franklab-omni', 'getVideoOmniStatus', 'GET', '/v1/videos/omni-video/:taskId', 'taskId path parameter'),
+	'omni.googleSubVideo': proxyV1Endpoint('omni', 'franklab-omni', 'googleSubVideo', 'POST', '/v1/videos/google-sub', 'Google subscription video payload'),
+	'omni.getGoogleSubVideoStatus': proxyV1Endpoint('omni', 'franklab-omni', 'getGoogleSubVideoStatus', 'GET', '/v1/videos/google-sub/:taskId', 'taskId path parameter'),
+	'omni.googleSubImage': proxyV1Endpoint('omni', 'franklab-omni', 'googleSubImage', 'POST', '/v1/images/google-sub', 'Google subscription image payload'),
+	'omni.getGoogleSubImageStatus': proxyV1Endpoint('omni', 'franklab-omni', 'getGoogleSubImageStatus', 'GET', '/v1/images/google-sub/:taskId', 'taskId path parameter'),
+
+	// KUSOK — element/voice library and recognition (requires a Kusok-capable partner key).
+	'kusok.createElement': makeCapabilityEndpoint('kusok', 'franklab-kusok', 'createElement', 'POST', '/make/kusok/elements', 'element creation payload', { guard: 'KusokApiKeyGuard' }),
+	'kusok.listElements': makeCapabilityEndpoint('kusok', 'franklab-kusok', 'listElements', 'GET', '/make/kusok/elements', 'optional pageNum and pageSize query parameters', { guard: 'KusokApiKeyGuard', outputExtractor: LIST_OUTPUT, costFields: [], queryFields: ['pageNum', 'pageSize'] }),
+	'kusok.getElement': makeCapabilityEndpoint('kusok', 'franklab-kusok', 'getElement', 'GET', '/make/kusok/elements/:id', 'id path parameter', { guard: 'KusokApiKeyGuard', outputExtractor: PROFILE_OUTPUT, costFields: [] }),
+	'kusok.deleteElement': makeCapabilityEndpoint('kusok', 'franklab-kusok', 'deleteElement', 'POST', '/make/kusok/elements/:id/delete', 'id path parameter', { guard: 'KusokApiKeyGuard', outputExtractor: PROFILE_OUTPUT, costFields: [] }),
+	'kusok.recognize': makeCapabilityEndpoint('kusok', 'franklab-kusok', 'recognize', 'POST', '/make/kusok/recognize', 'recognition payload', { guard: 'KusokApiKeyGuard' }),
+	'kusok.createElementAsync': makeCapabilityEndpoint('kusok', 'franklab-kusok', 'createElementAsync', 'POST', '/make/kusok/async/elements', 'async element creation payload', { guard: 'KusokApiKeyGuard' }),
+	'kusok.recognizeAsync': makeCapabilityEndpoint('kusok', 'franklab-kusok', 'recognizeAsync', 'POST', '/make/kusok/async/recognize', 'async recognition payload', { guard: 'KusokApiKeyGuard' }),
+	'kusok.getAsyncTask': makeCapabilityEndpoint('kusok', 'franklab-kusok', 'getAsyncTask', 'GET', '/make/kusok/async/tasks/:taskId', 'taskId path parameter', { guard: 'KusokApiKeyGuard' }),
+	'kusok.getTask': makeCapabilityEndpoint('kusok', 'franklab-kusok', 'getTask', 'GET', '/make/kusok/tasks/:taskId', 'taskId path parameter', { guard: 'KusokApiKeyGuard' }),
+	'kusok.createVoice': makeCapabilityEndpoint('kusok', 'franklab-kusok', 'createVoice', 'POST', '/make/kusok/voices', 'voice creation payload', { guard: 'KusokApiKeyGuard' }),
+	'kusok.listVoices': makeCapabilityEndpoint('kusok', 'franklab-kusok', 'listVoices', 'GET', '/make/kusok/voices', 'optional pageNum and pageSize query parameters', { guard: 'KusokApiKeyGuard', outputExtractor: LIST_OUTPUT, costFields: [], queryFields: ['pageNum', 'pageSize'] }),
+	'kusok.getVoice': makeCapabilityEndpoint('kusok', 'franklab-kusok', 'getVoice', 'GET', '/make/kusok/voices/:voiceId', 'voiceId path parameter', { guard: 'KusokApiKeyGuard', outputExtractor: PROFILE_OUTPUT, costFields: [] }),
+	'kusok.deleteVoice': makeCapabilityEndpoint('kusok', 'franklab-kusok', 'deleteVoice', 'DELETE', '/make/kusok/voices/:voiceId', 'voiceId path parameter', { guard: 'KusokApiKeyGuard', outputExtractor: PROFILE_OUTPUT, costFields: [] }),
+	'kusok.listPresetVoices': makeCapabilityEndpoint('kusok', 'franklab-kusok', 'listPresetVoices', 'GET', '/make/kusok/preset-voices', 'optional pageNum and pageSize query parameters', { guard: 'KusokApiKeyGuard', outputExtractor: LIST_OUTPUT, costFields: [], queryFields: ['pageNum', 'pageSize'] }),
+
+	// Kling element/voice library v1 surface (used by the Kling Omni Elements Make specs).
+	'kusok.listTags': proxyV1Endpoint('kusok', 'franklab-kusok-v1', 'listTags', 'GET', '/v1/elements/tags', 'optional pageNum and pageSize query parameters', { outputExtractor: LIST_OUTPUT, costFields: [], queryFields: ['pageNum', 'pageSize'] }),
+	'kusok.listElementVoices': proxyV1Endpoint('kusok', 'franklab-kusok-v1', 'listElementVoices', 'GET', '/v1/elements/voices', 'optional pageNum and pageSize query parameters', { outputExtractor: LIST_OUTPUT, costFields: [], queryFields: ['pageNum', 'pageSize'] }),
+	'kusok.listAdvancedPresets': proxyV1Endpoint('kusok', 'franklab-kusok-v1', 'listAdvancedPresets', 'GET', '/v1/general/advanced-presets-elements', 'optional pageNum and pageSize query parameters', { outputExtractor: LIST_OUTPUT, costFields: [], queryFields: ['pageNum', 'pageSize'] }),
+	'kusok.getAdvancedPreset': proxyV1Endpoint('kusok', 'franklab-kusok-v1', 'getAdvancedPreset', 'GET', '/v1/general/advanced-presets-elements/:id', 'id path parameter', { outputExtractor: PROFILE_OUTPUT, costFields: [] }),
+	'kusok.listCustomVoices': proxyV1Endpoint('kusok', 'franklab-kusok-v1', 'listCustomVoices', 'GET', '/v1/general/custom-voices', 'optional pageNum and pageSize query parameters', { guard: 'KusokApiKeyGuard', outputExtractor: LIST_OUTPUT, costFields: [], queryFields: ['pageNum', 'pageSize'] }),
+	'kusok.createCustomVoice': proxyV1Endpoint('kusok', 'franklab-kusok-v1', 'createCustomVoice', 'POST', '/v1/general/custom-voices', 'custom voice payload', { guard: 'KusokApiKeyGuard' }),
+	'kusok.getCustomVoice': proxyV1Endpoint('kusok', 'franklab-kusok-v1', 'getCustomVoice', 'GET', '/v1/general/custom-voices/:voiceId', 'voiceId path parameter', { guard: 'KusokApiKeyGuard', outputExtractor: PROFILE_OUTPUT, costFields: [] }),
+	'kusok.deleteCustomVoices': proxyV1Endpoint('kusok', 'franklab-kusok-v1', 'deleteCustomVoices', 'POST', '/v1/general/delete-voices', 'voice deletion payload', { guard: 'KusokApiKeyGuard' }),
+
+	// MERCURY — lip-sync.
+	'mercury.lipSync': proxyV1Endpoint('mercury', 'franklab-mercury', 'lipSync', 'POST', '/v1/videos/lip-sync', 'video and audio URL payload'),
+	'mercury.advancedLipSync': proxyV1Endpoint('mercury', 'franklab-mercury', 'advancedLipSync', 'POST', '/v1/videos/advanced-lip-sync', 'advanced lip-sync payload'),
+	'mercury.identifyFace': proxyV1Endpoint('mercury', 'franklab-mercury', 'identifyFace', 'POST', '/v1/videos/Identify-face', 'face identification payload', { costFields: [] }),
+	'mercury.getLipSyncStatus': proxyV1Endpoint('mercury', 'franklab-mercury', 'getLipSyncStatus', 'GET', '/v1/videos/lip-sync/:taskId', 'taskId path parameter'),
+	'mercury.getAdvancedLipSyncStatus': proxyV1Endpoint('mercury', 'franklab-mercury', 'getAdvancedLipSyncStatus', 'GET', '/v1/videos/advanced-lip-sync/:taskId', 'taskId path parameter'),
+
+	// NEPTUNE — text-to-speech.
+	'neptune.textToSpeech': proxyV1Endpoint('neptune', 'franklab-neptune', 'textToSpeech', 'POST', '/v1/audio/tts', 'text and voice payload'),
+	'neptune.getTask': proxyV1Endpoint('neptune', 'franklab-neptune', 'getTask', 'GET', '/v1/audio/tts/:taskId', 'taskId path parameter'),
+	'neptune.listVoices': proxyV1Endpoint('neptune', 'franklab-neptune', 'listVoices', 'GET', '/v1/audio/tts/voices-rpc', 'none', { outputExtractor: LIST_OUTPUT, costFields: [] }),
+
+	// PLUTO — audio generation from text or video.
+	'pluto.textToAudio': proxyV1Endpoint('pluto', 'franklab-pluto', 'textToAudio', 'POST', '/v1/audio/text-to-audio', 'prompt payload'),
+	'pluto.getAudioStatus': proxyV1Endpoint('pluto', 'franklab-pluto', 'getAudioStatus', 'GET', '/v1/audio/text-to-audio/:taskId', 'taskId path parameter'),
+	'pluto.videoToAudio': proxyV1Endpoint('pluto', 'franklab-pluto', 'videoToAudio', 'POST', '/v1/audio/video-to-audio', 'video URL payload'),
+	'pluto.getVideoAudioStatus': proxyV1Endpoint('pluto', 'franklab-pluto', 'getVideoAudioStatus', 'GET', '/v1/audio/video-to-audio/:taskId', 'taskId path parameter'),
+
+	// ARIES — Kolors virtual try-on.
+	'aries.getStatus': proxyV1Endpoint('aries', 'franklab-aries', 'getStatus', 'GET', '/v1/images/kolors-virtual-try-on/:taskId', 'taskId path parameter'),
+
+	// TITAN — multi-element videos.
+	'titan.initSelection': proxyV1Endpoint('titan', 'franklab-titan', 'initSelection', 'POST', '/v1/videos/multi-elements/init-selection', 'selection initialization payload', { costFields: [] }),
+	'titan.addSelection': proxyV1Endpoint('titan', 'franklab-titan', 'addSelection', 'POST', '/v1/videos/multi-elements/add-selection', 'selection addition payload', { costFields: [] }),
+	'titan.deleteSelection': proxyV1Endpoint('titan', 'franklab-titan', 'deleteSelection', 'POST', '/v1/videos/multi-elements/delete-selection', 'selection deletion payload', { costFields: [] }),
+	'titan.clearSelection': proxyV1Endpoint('titan', 'franklab-titan', 'clearSelection', 'POST', '/v1/videos/multi-elements/clear-selection', 'selection clearing payload', { costFields: [] }),
+	'titan.previewSelection': proxyV1Endpoint('titan', 'franklab-titan', 'previewSelection', 'POST', '/v1/videos/multi-elements/preview-selection', 'selection preview payload', { costFields: [] }),
+	'titan.createVideo': proxyV1Endpoint('titan', 'franklab-titan', 'createVideo', 'POST', '/v1/videos/multi-elements', 'multi-element video payload'),
+	'titan.getTask': proxyV1Endpoint('titan', 'franklab-titan', 'getTask', 'GET', '/v1/videos/multi-elements/:taskId', 'taskId path parameter'),
+	'titan.listTasks': proxyV1Endpoint('titan', 'franklab-titan', 'listTasks', 'GET', '/v1/videos/multi-elements', 'optional pageNum and pageSize query parameters', { outputExtractor: LIST_OUTPUT, costFields: [], queryFields: ['pageNum', 'pageSize'] }),
+
+	// HOT COFFE — ByteDance ModelArk media.
+	'hotCoffe.generateImage': makeCapabilityEndpoint('hotCoffe', 'franklab-hot-coffe', 'generateImage', 'POST', '/make/hot-coffe/images', 'image generation payload'),
+	'hotCoffe.getImageStatus': makeCapabilityEndpoint('hotCoffe', 'franklab-hot-coffe', 'getImageStatus', 'GET', '/make/hot-coffe/images/status/:taskId', 'taskId path parameter'),
+	'hotCoffe.createVideo': proxyV1Endpoint('hotCoffe', 'franklab-hot-coffe', 'createVideo', 'POST', '/v1/hot-coffe/videos/tasks', 'seedance video payload'),
+	'hotCoffe.getVideoStatus': proxyV1Endpoint('hotCoffe', 'franklab-hot-coffe', 'getVideoStatus', 'GET', '/v1/hot-coffe/videos/tasks/:taskId', 'taskId path parameter'),
 };
 
 export const MODULE_OPERATIONS: Record<FrankLabModule, string[]> = {
@@ -592,6 +894,108 @@ export const MODULE_OPERATIONS: Record<FrankLabModule, string[]> = {
 		'getDubbing',
 	],
 	c2pa: ['listProfiles', 'profileOptions', 'generateSelfSigned', 'revokeProfile'],
+	sufler: ['subtitles', 'getStatus'],
+	textSticker: [
+		'overlay',
+		'getStatus',
+		'listFonts',
+		'listStickers',
+		'listEmojis',
+		'listSubtitleTemplates',
+		'listVideoEffects',
+		'listTransitions',
+		'listTransitionSounds',
+		'listSafeZoneOptions',
+		'listAspectRatios',
+		'listResizePresets',
+	],
+	orkestr: [
+		'music',
+		'lyrics',
+		'style',
+		'persona',
+		'processing',
+		'visuals',
+		'getTaskV1',
+		'generate',
+		'extend',
+		'uploadCover',
+		'uploadExtend',
+		'addInstrumental',
+		'addVocals',
+		'replaceSection',
+		'mashup',
+		'lyricsV2',
+		'timestampedLyrics',
+		'separateVocals',
+		'generateMidi',
+		'convertWav',
+		'musicVideo',
+		'coverImage',
+		'boostStyle',
+		'generatePersona',
+		'lyriaMusic',
+		'getTaskV2',
+	],
+	jupiter: ['omniImage', 'seedreamImage', 'getOmniStatus', 'getSeedreamStatus', 'recraftImage', 'getRecraftStatus'],
+	mars: ['textToVideo', 'imageToVideo', 'effects', 'motionControl', 'getTextStatus', 'getImageStatus', 'getEffectsStatus', 'getMotionStatus'],
+	saturn: ['video', 'turboTextToVideo', 'turboImageToVideo', 'getVideoStatus', 'getTurboStatus'],
+	omni: [
+		'info',
+		'createVideo',
+		'getStatus',
+		'videoOmni',
+		'getVideoOmniStatus',
+		'googleSubVideo',
+		'getGoogleSubVideoStatus',
+		'googleSubImage',
+		'getGoogleSubImageStatus',
+	],
+	kusok: [
+		'listTags',
+		'listElementVoices',
+		'listAdvancedPresets',
+		'getAdvancedPreset',
+		'listCustomVoices',
+		'createCustomVoice',
+		'getCustomVoice',
+		'deleteCustomVoices',
+		'createElement',
+		'listElements',
+		'getElement',
+		'deleteElement',
+		'recognize',
+		'createElementAsync',
+		'recognizeAsync',
+		'getAsyncTask',
+		'getTask',
+		'createVoice',
+		'listVoices',
+		'getVoice',
+		'deleteVoice',
+		'listPresetVoices',
+	],
+	mercury: ['lipSync', 'advancedLipSync', 'identifyFace', 'getLipSyncStatus', 'getAdvancedLipSyncStatus'],
+	neptune: ['textToSpeech', 'getTask', 'listVoices'],
+	pluto: ['textToAudio', 'getAudioStatus', 'videoToAudio', 'getVideoAudioStatus'],
+	aries: ['getStatus'],
+	titan: [
+		'initSelection',
+		'addSelection',
+		'deleteSelection',
+		'clearSelection',
+		'previewSelection',
+		'createVideo',
+		'getTask',
+		'listTasks',
+	],
+	hotCoffe: ['generateImage', 'getImageStatus', 'createVideo', 'getVideoStatus'],
+	moon: ['createVideo', 'estimate', 'getStatus'],
+	venus: ['avatarVideo', 'getStatus'],
+	x: ['imagineVideo', 'imagineImage', 'getVideoStatus', 'getImageStatus'],
+	minimax: ['createVideo', 'getTask', 'listVideos', 'taskAction', 'idempotencyKey'],
+	dola: ['generate', 'listModels', 'fileFromUrl', 'listFiles', 'getFile', 'deleteFile', 'getTask'],
+	alibaba: ['generateImage', 'generateVideo', 'estimate', 'getStatus'],
 };
 
 export function getEndpoint(key: string): EndpointDefinition {

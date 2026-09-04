@@ -17,6 +17,9 @@ export function normalizeBaseUrl(rawBaseUrl: string): string {
 	try {
 		parsed = new URL(candidate);
 	} catch {
+		// Context-free URL/SSRF validator: no node is available here to build a NodeApiError; this message
+		// is wrapped into NodeOperationError at the node boundary (nodes/shared/node-utils.ts).
+		// eslint-disable-next-line @n8n/community-nodes/require-node-api-error
 		throw new Error('FrankLab Base URL must be https://franklab.ru');
 	}
 
@@ -49,6 +52,9 @@ export function validatePublicMediaUrl(rawUrl: string): true {
 	try {
 		parsed = new URL(rawUrl);
 	} catch {
+		// Context-free URL/SSRF validator: no node is available here to build a NodeApiError; this message
+		// is wrapped into NodeOperationError at the node boundary (nodes/shared/node-utils.ts).
+		// eslint-disable-next-line @n8n/community-nodes/require-node-api-error
 		throw new Error('Media URL must be an absolute URL');
 	}
 
@@ -64,14 +70,14 @@ export function validatePublicMediaUrl(rawUrl: string): true {
 	return true;
 }
 
-export function validatePublicMediaUrlsInPayload(payload: unknown): true {
-	validateNestedMediaUrls(payload, 'payload');
+export function validatePublicMediaUrlsInPayload(payload: unknown, exactMediaFields: readonly string[] = []): true {
+	validateNestedMediaUrls(payload, 'payload', exactMediaFields);
 	return true;
 }
 
-function validateNestedMediaUrls(value: unknown, path: string): void {
+function validateNestedMediaUrls(value: unknown, path: string, exactMediaFields: readonly string[]): void {
 	if (Array.isArray(value)) {
-		value.forEach((item, index) => validateNestedMediaUrls(item, `${path}[${index}]`));
+		value.forEach((item, index) => validateNestedMediaUrls(item, `${path}[${index}]`, exactMediaFields));
 		return;
 	}
 
@@ -79,15 +85,18 @@ function validateNestedMediaUrls(value: unknown, path: string): void {
 
 	for (const [key, nestedValue] of Object.entries(value)) {
 		const fieldPath = `${path}.${key}`;
-		if (isMediaUrlField(key) && typeof nestedValue === 'string' && nestedValue.trim() !== '') {
+		if (isMediaUrlField(key, exactMediaFields) && typeof nestedValue === 'string' && nestedValue.trim() !== '') {
 			try {
 				validatePublicMediaUrl(nestedValue);
 			} catch (error) {
 				const message = error instanceof Error ? error.message : String(error);
+				// Context-free URL/SSRF validator: no node is available here to build a NodeApiError; this
+				// message is wrapped into NodeOperationError at the node boundary (nodes/shared/node-utils.ts).
+				// eslint-disable-next-line @n8n/community-nodes/require-node-api-error
 				throw new Error(`Media URL field ${fieldPath}: ${message}`);
 			}
 		}
-		validateNestedMediaUrls(nestedValue, fieldPath);
+		validateNestedMediaUrls(nestedValue, fieldPath, exactMediaFields);
 	}
 }
 
@@ -95,8 +104,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function isMediaUrlField(key: string): boolean {
+function isMediaUrlField(key: string, exactMediaFields: readonly string[]): boolean {
 	const lower = key.toLowerCase();
+	if (exactMediaFields.includes(lower)) return true;
+	// Generic suffix rule only: bare keys like `image` may legally carry base64 data on
+	// some surfaces (e.g. Jupiter omni-image edit mode), so they are validated only when
+	// the calling module declares them as URL fields via exactMediaFields.
 	return lower === 'url' || lower.endsWith('_url') || lower.endsWith('-url') || key.endsWith('Url') || key.endsWith('URL');
 }
 

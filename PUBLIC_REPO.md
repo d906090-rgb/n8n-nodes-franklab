@@ -13,6 +13,7 @@ Only the contents of `integrations/n8n-nodes-franklab` should be copied into tha
 - `.github/workflows/ci.yml`
 - `.github/workflows/publish.yml`
 - `.gitignore`
+- `.npmrc`
 - `.prettierrc.js`
 - `CHANGELOG.md`
 - `LICENSE`
@@ -25,6 +26,11 @@ Only the contents of `integrations/n8n-nodes-franklab` should be copied into tha
 - `package-lock.json`
 - `package.json`
 - `test/**`
+- `tooling/.npmrc`
+- `tooling/link-node-cli.mjs`
+- `tooling/package-lock.json`
+- `tooling/package.json`
+- `tooling/run-node-cli.mjs`
 - `tsconfig.json`
 
 ## Never Copy To Public Repo
@@ -36,6 +42,8 @@ Only the contents of `integrations/n8n-nodes-franklab` should be copied into tha
 - `.env`, npm tokens, GitHub secrets, API keys, PEM files, private keys, certificates, or runtime state.
 - Generated `dist/` output or `node_modules/`.
 
+`tooling` is a `private:true` development-only npm contour. It is required in the public source repository so CI and release commands remain self-contained, but its manifest, lockfile, helpers, and installed dependencies must never appear in the published npm tarball. Both public and tooling lockfiles remain dependency-scanner inputs.
+
 ## Publish Source
 
 npm provenance must come from the public package repository. Do not publish this package from the private monorepo, because npm rejects provenance bundles from private GitHub Actions source repositories.
@@ -46,6 +54,8 @@ npm provenance must come from the public package repository. Do not publish this
 2. Confirm `package.json` points to `git+https://github.com/d906090-rgb/n8n-nodes-franklab.git`.
 3. Confirm the public repository is visible as public on GitHub.
 4. Confirm `NPM_TOKEN` or a Trusted Publisher is configured for the public repository.
-5. Run CI in the public repository.
-6. Push the release tag `n8n-nodes-franklab-v<version>`.
-7. Verify the npm package and run `npm run scan:published`.
+5. Run `npm ci --ignore-scripts`, then `npm run tooling:ci` in a clean public checkout.
+6. Run build, test, scan, and inspect `npm pack --dry-run --json`; require zero `tooling/` or `dist/tooling/` tarball paths.
+7. Run CI in the public repository.
+8. Push the release tag `n8n-nodes-franklab-v<version>`.
+9. Verify the npm package and run `npm run scan:published`.

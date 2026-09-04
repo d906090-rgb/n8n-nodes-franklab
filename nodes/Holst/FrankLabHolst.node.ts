@@ -7,6 +7,7 @@ export class FrankLabHolst implements INodeType {
 		displayName: 'FrankLab HOLST',
 		name: 'frankLabHolst',
 		icon: 'file:holst.svg',
+		subtitle: '={{$parameter["operation"]}}',
 		group: ['transform'],
 		version: 1,
 		description: 'Process images with FrankLab HOLST.',
@@ -30,18 +31,8 @@ export class FrankLabHolst implements INodeType {
 				noDataExpression: true,
 				default: 'submitImage',
 				options: [
-					{
-						name: 'Get Job Status',
-						value: 'getStatus',
-						description: 'Fetch a HOLST job status and output',
-						action: 'Fetch a HOLST job status and output',
-					},
-					{
-						name: 'Submit Image Job',
-						value: 'submitImage',
-						description: 'Create a HOLST image processing job',
-						action: 'Create a HOLST image processing job',
-					},
+					{ name: 'Get Job Status', value: 'getStatus', action: 'Get an image job status' },
+					{ name: 'Submit Image Job', value: 'submitImage', action: 'Submit an image processing job' },
 				],
 			},
 			{
@@ -60,6 +51,12 @@ export class FrankLabHolst implements INodeType {
 				options: [
 					{ name: 'Adjust', value: 'adjust' },
 					{ name: 'Blur', value: 'blur' },
+					{ name: 'BRIA Erase by Text', value: 'bria_erase_by_text', action: 'Erase image area by text' },
+					{ name: 'BRIA Erase Foreground', value: 'bria_erase_foreground', action: 'Erase the image foreground' },
+					{ name: 'BRIA Image Product Cutout', value: 'bria_product_cutout', action: 'Cut out a product' },
+					{ name: 'BRIA Image Product Lifestyle by Text', value: 'bria_product_lifestyle_by_text', action: 'Place a product in a lifestyle scene' },
+					{ name: 'BRIA Image Remove Background', value: 'bria_image_remove_bg', action: 'Remove the image background' },
+					{ name: 'BRIA Image Replace Background', value: 'bria_image_replace_bg', action: 'Replace the image background' },
 					{ name: 'Collage', value: 'collage' },
 					{ name: 'Crop', value: 'crop' },
 					{ name: 'Filter', value: 'filter' },
@@ -89,6 +86,10 @@ export class FrankLabHolst implements INodeType {
 		],
 	};
 
+	// continueOnFail() is handled centrally in executeFrankLabModule() — see nodes/shared/node-utils.ts:
+	// each item runs in a try/catch that checks this.continueOnFail() and otherwise throws a
+	// NodeOperationError with { itemIndex }. The rule only scans the execute() body, so it cannot see the
+	// handling across the helper boundary (confirmed false positive).
 	async execute(this: IExecuteFunctions) {
 		return executeFrankLabModule(this, 'holst', 'getStatus');
 	}

@@ -7,6 +7,7 @@ export class FrankLabKley implements INodeType {
 		displayName: 'FrankLab KLEY',
 		name: 'frankLabKley',
 		icon: 'file:kley.svg',
+		subtitle: '={{$parameter["operation"]}}',
 		group: ['transform'],
 		version: 1,
 		description: 'Process video montage, speed, subtitles, and overlays with FrankLab KLEY.',
@@ -85,6 +86,10 @@ export class FrankLabKley implements INodeType {
 		],
 	};
 
+	// continueOnFail() is handled centrally in executeFrankLabModule() — see nodes/shared/node-utils.ts:
+	// each item runs in a try/catch that checks this.continueOnFail() and otherwise throws a
+	// NodeOperationError with { itemIndex }. The rule only scans the execute() body, so it cannot see the
+	// handling across the helper boundary (confirmed false positive).
 	async execute(this: IExecuteFunctions) {
 		return executeFrankLabModule(this, 'kley', 'getStatus');
 	}

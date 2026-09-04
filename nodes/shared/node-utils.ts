@@ -4,7 +4,7 @@ import { createFrankLabClient } from './client';
 import type { FetchResponse } from './client';
 import { keyFor } from './registry';
 import type { FrankLabModule } from './registry';
-import { validatePublicMediaUrlsInPayload } from './url';
+import { validatePublicMediaUrl, validatePublicMediaUrlsInPayload } from './url';
 
 export const jobIdProperty: INodeProperties = {
 	displayName: 'Job ID',
@@ -14,7 +14,31 @@ export const jobIdProperty: INodeProperties = {
 	required: true,
 	displayOptions: {
 		show: {
-			operation: ['getStatus', 'getTask', 'getDubbing'],
+			operation: [
+				'getStatus',
+				'getTask',
+				'getDubbing',
+				'getTaskV1',
+				'getTaskV2',
+				'getOmniStatus',
+				'getSeedreamStatus',
+				'getTextStatus',
+				'getImageStatus',
+				'getEffectsStatus',
+				'getMotionStatus',
+				'getVideoStatus',
+				'getTurboStatus',
+				'getVideoOmniStatus',
+				'getLipSyncStatus',
+				'getAdvancedLipSyncStatus',
+				'getAudioStatus',
+				'getVideoAudioStatus',
+				'getGoogleSubVideoStatus',
+				'getGoogleSubImageStatus',
+				'getRecraftStatus',
+				'getAsyncTask',
+				'taskAction',
+			],
 		},
 	},
 };
@@ -32,6 +56,93 @@ export const profileIdProperty: INodeProperties = {
 	},
 };
 
+const READ_ONLY_OPERATIONS = [
+	'getStatus',
+	'getTask',
+	'getDubbing',
+	'getTaskV1',
+	'getTaskV2',
+	'getOmniStatus',
+	'getSeedreamStatus',
+	'getTextStatus',
+	'getImageStatus',
+	'getEffectsStatus',
+	'getMotionStatus',
+	'getVideoStatus',
+	'getTurboStatus',
+	'listProfiles',
+	'profileOptions',
+	'listSamples',
+	'listVoices',
+	'listModels',
+	'usage',
+	'revokeProfile',
+	'listFonts',
+	'listStickers',
+	'listEmojis',
+	'listSubtitleTemplates',
+	'listVideoEffects',
+	'listTransitions',
+	'listTransitionSounds',
+	'listSafeZoneOptions',
+	'listAspectRatios',
+	'listResizePresets',
+	'info',
+	'listElements',
+	'getElement',
+	'deleteElement',
+	'getVoice',
+	'deleteVoice',
+	'listPresetVoices',
+	'getVideoOmniStatus',
+	'getLipSyncStatus',
+	'getAdvancedLipSyncStatus',
+	'getAudioStatus',
+	'getVideoAudioStatus',
+	'listTasks',
+	'listTags',
+	'listElementVoices',
+	'listAdvancedPresets',
+	'getAdvancedPreset',
+	'listCustomVoices',
+	'getCustomVoice',
+	'getGoogleSubVideoStatus',
+	'getGoogleSubImageStatus',
+	'getRecraftStatus',
+	'getAsyncTask',
+	'listFiles',
+	'getFile',
+	'deleteFile',
+	'listVideos',
+	'idempotencyKey',
+];
+
+const NO_POLL_OPERATIONS = [
+	'estimate',
+	'music',
+	'lyrics',
+	'style',
+	'persona',
+	'processing',
+	'visuals',
+	'taskAction',
+	'identifyFace',
+	'initSelection',
+	'addSelection',
+	'deleteSelection',
+	'clearSelection',
+	'previewSelection',
+	'deleteCustomVoices',
+];
+
+// Bare keys that are media URLs on a specific module's DTO (validated by the shared
+// SSRF policy). Modules whose DTOs accept base64 under the same bare key (e.g. Jupiter
+// `image`) must NOT be listed here.
+const MODULE_EXACT_MEDIA_FIELDS: Partial<Record<FrankLabModule, readonly string[]>> = {
+	venus: ['image', 'sound_file'],
+	mars: ['image'],
+};
+
 export const waitProperty: INodeProperties = {
 	displayName: 'Wait for Completion',
 	name: 'waitForCompletion',
@@ -39,7 +150,7 @@ export const waitProperty: INodeProperties = {
 	default: false,
 	displayOptions: {
 		hide: {
-			operation: ['getStatus', 'getTask', 'getDubbing', 'listProfiles', 'profileOptions', 'listSamples', 'listVoices', 'listModels', 'usage', 'revokeProfile'],
+			operation: [...READ_ONLY_OPERATIONS, ...NO_POLL_OPERATIONS],
 		},
 	},
 };
@@ -52,7 +163,7 @@ export const payloadProperty: INodeProperties = {
 	description: 'Additional FrankLab request fields as JSON. URL media fields must use public http or https URLs.',
 	displayOptions: {
 		hide: {
-			operation: ['getStatus', 'getTask', 'getDubbing', 'listProfiles', 'profileOptions', 'listSamples', 'listVoices', 'listModels', 'usage', 'revokeProfile'],
+			operation: READ_ONLY_OPERATIONS,
 		},
 	},
 };
@@ -84,9 +195,15 @@ export async function executeFrankLabModule(
 	for (let itemIndex = 0; itemIndex < items.length; itemIndex += 1) {
 		try {
 			const operation = context.getNodeParameter('operation', itemIndex) as string;
-			const payload = buildPayload(context, itemIndex, operation);
+			const payload = buildPayload(context, itemIndex, moduleName, operation);
 			const result = await client.request(keyFor(moduleName, operation), payload);
-			const shouldPoll = context.getNodeParameter('waitForCompletion', itemIndex, false) as boolean;
+			// The wait toggle is hidden for NO_POLL/READ_ONLY operations, but workflows can
+			// still carry waitForCompletion=true (imported JSON, API) — enforce it here so
+			// those operations never poll a status endpoint from the wrong family.
+			const shouldPoll =
+				(context.getNodeParameter('waitForCompletion', itemIndex, false) as boolean) &&
+				!NO_POLL_OPERATIONS.includes(operation) &&
+				!READ_ONLY_OPERATIONS.includes(operation);
 			const taskId = typeof result.taskId === 'string' ? result.taskId : '';
 			const pollOperation = resolveStatusOperation(statusOperation, operation);
 			const finalResult = shouldPoll && taskId && pollOperation ? await client.poll(keyFor(moduleName, pollOperation), taskId) : result;
@@ -103,7 +220,7 @@ export async function executeFrankLabModule(
 	return [output];
 }
 
-function buildPayload(context: IExecuteFunctions, itemIndex: number, operation: string): Record<string, unknown> {
+export function buildPayload(context: IExecuteFunctions, itemIndex: number, moduleName: FrankLabModule, operation: string): Record<string, unknown> {
 	const payload = parsePayload(context.getNodeParameter('payloadJson', itemIndex, '{}') as string);
 	const simpleFields = [
 		'imageUrl',
@@ -153,12 +270,98 @@ function buildPayload(context: IExecuteFunctions, itemIndex: number, operation: 
 		'design_text',
 		'voice_name',
 		'generated_voice_id',
+		'prompt',
+		'system_prompt',
+		'model',
+		'model_key',
+		'model_name',
+		'moonModel',
+		'templateId',
+		'captionEngine',
+		'language',
+		'transcriptionEngine',
+		'highlightMode',
+		'platform',
+		'safeZonePreset',
+		'configId',
+		'operationMode',
+		'recraftModel',
+		'modelVariant',
+		'voice',
+		'aspect_ratio',
+		'resolution',
+		'duration',
+		'durationSeconds',
+		'ratio',
+		'mode',
+		'source_mode',
+		'execution_mode',
+		'negative_prompt',
+		'quality',
+		'n',
+		'size',
+		'width',
+		'height',
+		'image_url',
+		'video_url',
+		'image',
+		'sound_file',
+		'effect',
+		'effect_scene',
+		'image_tail',
+		'page_num',
+		'page_size',
+		'pageNum',
+		'pageSize',
+		'element_name',
+		'element_description',
+		'reference_type',
+		'frontal_image',
+		'element_voice_id',
+		'voice_url',
+		'video_id',
+		'source_task_id',
+		'voiceId',
+		'id',
+		'output_delivery',
+		'url',
+		'sound_file_url',
+		'audio_id',
+		'reference_image_url',
+		'callback_url',
+		'callbackUrl',
+		'external_task_id',
+		'idempotency_key',
+		'scenario',
+		'first_frame_stored_file_id',
+		'title',
+		'tags',
+		'lyrics',
+		'instrumental',
+		'customMode',
+		'async_mode',
+		'response_format',
+		'max_tokens',
+		'temperature',
+		'filename',
+		'purpose',
+		'file_id',
+		'billing_task_id',
+		'pollKind',
+		'action',
+		'media',
 	];
 
 	for (const field of simpleFields) {
-		const value = getOptionalNodeParameter(context, field, itemIndex);
+		const value = context.getNodeParameter(field, itemIndex, undefined) as unknown;
 		if (value !== undefined && value !== '') {
-			payload[field === 'operationName' ? 'operation' : field] = value;
+			const targetField =
+			field === 'operationName' || field === 'operationMode'
+				? 'operation'
+				: field === 'recraftModel'
+						? 'model'
+						: field;
+			payload[targetField] = value;
 		}
 	}
 
@@ -172,25 +375,42 @@ function buildPayload(context: IExecuteFunctions, itemIndex: number, operation: 
 	if (operation === 'getDubbing' && payload.jobId && !payload.dubbingId) {
 		payload.dubbingId = payload.jobId;
 	}
+	if (operation === 'taskAction' && payload.jobId && !payload.taskId) {
+		payload.taskId = payload.jobId;
+	}
+	if (moduleName === 'dola' && operation === 'getTask') {
+		payload.billing_task_id = payload.billing_task_id ?? payload.taskId ?? payload.jobId;
+	}
+	if (operation.startsWith('get') && payload.jobId && !payload.taskId && !payload.billing_task_id && !payload.file_id) {
+		payload.taskId = payload.jobId;
+	}
+	if (moduleName === 'hotCoffe' && operation === 'createVideo' && typeof payload.video_url === 'string' && payload.video_url) {
+		if (!payload.video_list) {
+			payload.video_list = [{ video_url: payload.video_url }];
+		}
+		delete payload.video_url;
+	}
+	if (moduleName === 'omni' && operation === 'videoOmni' && typeof payload.video_url === 'string' && payload.video_url) {
+		if (!payload.video_list) {
+			payload.video_list = [{ video_url: payload.video_url }];
+		}
+		delete payload.video_url;
+	}
+	if (moduleName === 'kusok' && (operation === 'createElement' || operation === 'createElementAsync') && typeof payload.image_url === 'string' && payload.image_url) {
+		const referImages = Array.isArray(payload.refer_images) ? [...(payload.refer_images as unknown[])] : [];
+		referImages.unshift({ image_url: payload.image_url });
+		payload.refer_images = referImages;
+		delete payload.image_url;
+	}
+	if (moduleName === 'jupiter' && operation === 'recraftImage' && typeof payload.image === 'string' && payload.image) {
+		validatePublicMediaUrl(payload.image);
+		payload.input = { ...(typeof payload.input === 'object' && payload.input !== null ? (payload.input as Record<string, unknown>) : {}), image: payload.image };
+		delete payload.image;
+	}
 
-	validatePublicMediaUrlsInPayload(payload);
+	validatePublicMediaUrlsInPayload(payload, MODULE_EXACT_MEDIA_FIELDS[moduleName] ?? []);
 
 	return payload;
-}
-
-function getOptionalNodeParameter(context: IExecuteFunctions, field: string, itemIndex: number): unknown {
-	try {
-		return context.getNodeParameter(field, itemIndex, undefined) as unknown;
-	} catch (error) {
-		if (isMissingNodeParameterError(error)) {
-			return undefined;
-		}
-		throw error;
-	}
-}
-
-function isMissingNodeParameterError(error: unknown): boolean {
-	return error instanceof Error && error.message.includes('Could not get parameter');
 }
 
 function resolveStatusOperation(statusOperation: string | Record<string, string>, operation: string): string {

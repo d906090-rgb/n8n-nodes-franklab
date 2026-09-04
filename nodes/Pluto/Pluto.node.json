@@ -1,0 +1,10 @@
+{
+	"node": "n8n-nodes-base.frankLabPluto",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": ["Marketing & Content", "Communication"],
+	"resources": {
+		"credentialDocumentation": [{ "url": "https://github.com/d906090-rgb/n8n-nodes-franklab#credentials" }],
+		"primaryDocumentation": [{ "url": "https://github.com/d906090-rgb/n8n-nodes-franklab#pluto" }]
+	}
+}
