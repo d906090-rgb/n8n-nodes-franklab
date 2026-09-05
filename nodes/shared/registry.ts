@@ -29,7 +29,7 @@ export type HttpMethod = 'GET' | 'POST' | 'DELETE';
 export type ResponseEnvelope = 'successData' | 'codeData';
 
 export interface EndpointDefinition {
-	key: string;
+	endpointId: string;
 	module: FrankLabModule;
 	operation: string;
 	routeFamily: string;
@@ -78,7 +78,7 @@ function jobsEndpoint(
 	options: { guard?: string; outputExtractor?: string; costFields?: readonly string[]; bodyTransform?: 'wrapOperationPayload' } = {},
 ): EndpointDefinition {
 	return endpoint({
-		key: `${module}.${operation}`,
+		endpointId: `${module}.${operation}`,
 		module,
 		operation,
 		routeFamily: 'franklab-partner-jobs',
@@ -100,7 +100,7 @@ function jobsEndpoint(
 /** Read-only text-sticker integration option lists: Bearer auth, no cost fields. */
 function integrationListEndpoint(module: FrankLabModule, operation: string, path: string, requestShape: string): EndpointDefinition {
 	return endpoint({
-		key: `${module}.${operation}`,
+		endpointId: `${module}.${operation}`,
 		module,
 		operation,
 		routeFamily: 'franklab-text-sticker-integrations',
@@ -129,7 +129,7 @@ function proxyV1Endpoint(
 	options: { outputExtractor?: string; queryFields?: readonly string[]; guard?: string; costFields?: readonly string[] } = {},
 ): EndpointDefinition {
 	return endpoint({
-		key: `${module}.${operation}`,
+		endpointId: `${module}.${operation}`,
 		module,
 		operation,
 		routeFamily,
@@ -159,7 +159,7 @@ function makeCapabilityEndpoint(
 	options: { guard?: string; outputExtractor?: string; costFields?: readonly string[]; bodyTransform?: 'wrapOperationPayload'; queryFields?: readonly string[] } = {},
 ): EndpointDefinition {
 	return endpoint({
-		key: `${module}.${operation}`,
+		endpointId: `${module}.${operation}`,
 		module,
 		operation,
 		routeFamily,
@@ -181,7 +181,7 @@ function makeCapabilityEndpoint(
 
 export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 	'holst.submitImage': endpoint({
-		key: 'holst.submitImage',
+		endpointId: 'holst.submitImage',
 		module: 'holst',
 		operation: 'submitImage',
 		routeFamily: 'franklab-partner-jobs',
@@ -198,7 +198,7 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 		redactionFields: BEARER_REDACTION,
 	}),
 	'holst.getStatus': endpoint({
-		key: 'holst.getStatus',
+		endpointId: 'holst.getStatus',
 		module: 'holst',
 		operation: 'getStatus',
 		routeFamily: 'franklab-partner-jobs',
@@ -215,7 +215,7 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 		redactionFields: BEARER_REDACTION,
 	}),
 	'kley.montage': endpoint({
-		key: 'kley.montage',
+		endpointId: 'kley.montage',
 		module: 'kley',
 		operation: 'montage',
 		routeFamily: 'franklab-partner-jobs',
@@ -232,7 +232,7 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 		redactionFields: BEARER_REDACTION,
 	}),
 	'kley.videoSpeed': endpoint({
-		key: 'kley.videoSpeed',
+		endpointId: 'kley.videoSpeed',
 		module: 'kley',
 		operation: 'videoSpeed',
 		routeFamily: 'franklab-partner-jobs',
@@ -249,7 +249,7 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 		redactionFields: BEARER_REDACTION,
 	}),
 	'kley.subtitles': endpoint({
-		key: 'kley.subtitles',
+		endpointId: 'kley.subtitles',
 		module: 'kley',
 		operation: 'subtitles',
 		routeFamily: 'franklab-partner-jobs',
@@ -266,7 +266,7 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 		redactionFields: BEARER_REDACTION,
 	}),
 	'kley.overlay': endpoint({
-		key: 'kley.overlay',
+		endpointId: 'kley.overlay',
 		module: 'kley',
 		operation: 'overlay',
 		routeFamily: 'franklab-partner-jobs',
@@ -283,7 +283,7 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 		redactionFields: BEARER_REDACTION,
 	}),
 	'kley.getStatus': endpoint({
-		key: 'kley.getStatus',
+		endpointId: 'kley.getStatus',
 		module: 'kley',
 		operation: 'getStatus',
 		routeFamily: 'franklab-partner-jobs',
@@ -300,7 +300,7 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 		redactionFields: BEARER_REDACTION,
 	}),
 	'plastinka.processAudio': endpoint({
-		key: 'plastinka.processAudio',
+		endpointId: 'plastinka.processAudio',
 		module: 'plastinka',
 		operation: 'processAudio',
 		routeFamily: 'franklab-partner-jobs',
@@ -317,7 +317,7 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 		redactionFields: BEARER_REDACTION,
 	}),
 	'plastinka.saveSample': endpoint({
-		key: 'plastinka.saveSample',
+		endpointId: 'plastinka.saveSample',
 		module: 'plastinka',
 		operation: 'saveSample',
 		routeFamily: 'franklab-audio-samples',
@@ -334,7 +334,7 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 		redactionFields: BEARER_REDACTION,
 	}),
 	'plastinka.listSamples': endpoint({
-		key: 'plastinka.listSamples',
+		endpointId: 'plastinka.listSamples',
 		module: 'plastinka',
 		operation: 'listSamples',
 		routeFamily: 'franklab-audio-samples',
@@ -351,7 +351,7 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 		redactionFields: BEARER_REDACTION,
 	}),
 	'plastinka.getStatus': endpoint({
-		key: 'plastinka.getStatus',
+		endpointId: 'plastinka.getStatus',
 		module: 'plastinka',
 		operation: 'getStatus',
 		routeFamily: 'franklab-partner-jobs',
@@ -368,7 +368,7 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 		redactionFields: BEARER_REDACTION,
 	}),
 	'volna.textToSpeech': endpoint({
-		key: 'volna.textToSpeech',
+		endpointId: 'volna.textToSpeech',
 		module: 'volna',
 		operation: 'textToSpeech',
 		routeFamily: 'franklab-volna',
@@ -385,7 +385,7 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 		redactionFields: API_KEY_REDACTION,
 	}),
 	'volna.textToDialogue': endpoint({
-		key: 'volna.textToDialogue',
+		endpointId: 'volna.textToDialogue',
 		module: 'volna',
 		operation: 'textToDialogue',
 		routeFamily: 'franklab-volna',
@@ -402,7 +402,7 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 		redactionFields: API_KEY_REDACTION,
 	}),
 	'volna.textToSpeechTurbo': endpoint({
-		key: 'volna.textToSpeechTurbo',
+		endpointId: 'volna.textToSpeechTurbo',
 		module: 'volna',
 		operation: 'textToSpeechTurbo',
 		routeFamily: 'franklab-volna',
@@ -419,7 +419,7 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 		redactionFields: API_KEY_REDACTION,
 	}),
 	'volna.googleTts': endpoint({
-		key: 'volna.googleTts',
+		endpointId: 'volna.googleTts',
 		module: 'volna',
 		operation: 'googleTts',
 		routeFamily: 'franklab-volna',
@@ -436,7 +436,7 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 		redactionFields: API_KEY_REDACTION,
 	}),
 	'volna.transcribe': endpoint({
-		key: 'volna.transcribe',
+		endpointId: 'volna.transcribe',
 		module: 'volna',
 		operation: 'transcribe',
 		routeFamily: 'franklab-volna',
@@ -453,7 +453,7 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 		redactionFields: API_KEY_REDACTION,
 	}),
 	'volna.soundEffect': endpoint({
-		key: 'volna.soundEffect',
+		endpointId: 'volna.soundEffect',
 		module: 'volna',
 		operation: 'soundEffect',
 		routeFamily: 'franklab-volna',
@@ -470,7 +470,7 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 		redactionFields: API_KEY_REDACTION,
 	}),
 	'volna.audioIsolation': endpoint({
-		key: 'volna.audioIsolation',
+		endpointId: 'volna.audioIsolation',
 		module: 'volna',
 		operation: 'audioIsolation',
 		routeFamily: 'franklab-volna',
@@ -487,7 +487,7 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 		redactionFields: API_KEY_REDACTION,
 	}),
 	'volna.voiceClone': endpoint({
-		key: 'volna.voiceClone',
+		endpointId: 'volna.voiceClone',
 		module: 'volna',
 		operation: 'voiceClone',
 		routeFamily: 'franklab-volna',
@@ -504,7 +504,7 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 		redactionFields: API_KEY_REDACTION,
 	}),
 	'volna.voiceDesign': endpoint({
-		key: 'volna.voiceDesign',
+		endpointId: 'volna.voiceDesign',
 		module: 'volna',
 		operation: 'voiceDesign',
 		routeFamily: 'franklab-volna',
@@ -521,7 +521,7 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 		redactionFields: API_KEY_REDACTION,
 	}),
 	'volna.voiceDesignSave': endpoint({
-		key: 'volna.voiceDesignSave',
+		endpointId: 'volna.voiceDesignSave',
 		module: 'volna',
 		operation: 'voiceDesignSave',
 		routeFamily: 'franklab-volna',
@@ -538,7 +538,7 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 		redactionFields: API_KEY_REDACTION,
 	}),
 	'volna.dubbing': endpoint({
-		key: 'volna.dubbing',
+		endpointId: 'volna.dubbing',
 		module: 'volna',
 		operation: 'dubbing',
 		routeFamily: 'franklab-volna',
@@ -555,7 +555,7 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 		redactionFields: API_KEY_REDACTION,
 	}),
 	'volna.listVoices': endpoint({
-		key: 'volna.listVoices',
+		endpointId: 'volna.listVoices',
 		module: 'volna',
 		operation: 'listVoices',
 		routeFamily: 'franklab-volna',
@@ -572,7 +572,7 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 		redactionFields: API_KEY_REDACTION,
 	}),
 	'volna.listModels': endpoint({
-		key: 'volna.listModels',
+		endpointId: 'volna.listModels',
 		module: 'volna',
 		operation: 'listModels',
 		routeFamily: 'franklab-volna',
@@ -589,7 +589,7 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 		redactionFields: API_KEY_REDACTION,
 	}),
 	'volna.usage': endpoint({
-		key: 'volna.usage',
+		endpointId: 'volna.usage',
 		module: 'volna',
 		operation: 'usage',
 		routeFamily: 'franklab-volna',
@@ -606,7 +606,7 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 		redactionFields: API_KEY_REDACTION,
 	}),
 	'volna.getTask': endpoint({
-		key: 'volna.getTask',
+		endpointId: 'volna.getTask',
 		module: 'volna',
 		operation: 'getTask',
 		routeFamily: 'franklab-volna',
@@ -623,7 +623,7 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 		redactionFields: API_KEY_REDACTION,
 	}),
 	'volna.getDubbing': endpoint({
-		key: 'volna.getDubbing',
+		endpointId: 'volna.getDubbing',
 		module: 'volna',
 		operation: 'getDubbing',
 		routeFamily: 'franklab-volna',
@@ -640,8 +640,7 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 		redactionFields: API_KEY_REDACTION,
 	}),
 	'c2pa.listProfiles': endpoint({
-		// eslint-disable-next-line @n8n/community-nodes/no-hardcoded-secrets -- registry endpoint id, not a credential
-		key: 'c2pa.listProfiles',
+		endpointId: 'c2pa.listProfiles',
 		module: 'c2pa',
 		operation: 'listProfiles',
 		routeFamily: 'franklab-c2pa-signer-profiles',
@@ -658,8 +657,7 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 		redactionFields: BEARER_REDACTION,
 	}),
 	'c2pa.profileOptions': endpoint({
-		// eslint-disable-next-line @n8n/community-nodes/no-hardcoded-secrets -- registry endpoint id, not a credential
-		key: 'c2pa.profileOptions',
+		endpointId: 'c2pa.profileOptions',
 		module: 'c2pa',
 		operation: 'profileOptions',
 		routeFamily: 'franklab-c2pa-signer-profiles',
@@ -676,8 +674,7 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 		redactionFields: BEARER_REDACTION,
 	}),
 	'c2pa.generateSelfSigned': endpoint({
-		// eslint-disable-next-line @n8n/community-nodes/no-hardcoded-secrets -- registry endpoint id, not a credential
-		key: 'c2pa.generateSelfSigned',
+		endpointId: 'c2pa.generateSelfSigned',
 		module: 'c2pa',
 		operation: 'generateSelfSigned',
 		routeFamily: 'franklab-c2pa-signer-profiles',
@@ -694,8 +691,7 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 		redactionFields: BEARER_REDACTION,
 	}),
 	'c2pa.revokeProfile': endpoint({
-		// eslint-disable-next-line @n8n/community-nodes/no-hardcoded-secrets -- registry endpoint id, not a credential
-		key: 'c2pa.revokeProfile',
+		endpointId: 'c2pa.revokeProfile',
 		module: 'c2pa',
 		operation: 'revokeProfile',
 		routeFamily: 'franklab-c2pa-signer-profiles',

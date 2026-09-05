@@ -1,6 +1,6 @@
 {
 	"name": "@apergrex/n8n-nodes-franklab",
-	"version": "0.2.0",
+	"version": "0.2.1",
 	"description": "Official FrankLab community nodes for n8n.",
 	"license": "MIT",
 	"homepage": "https://github.com/d906090-rgb/n8n-nodes-franklab#readme",
