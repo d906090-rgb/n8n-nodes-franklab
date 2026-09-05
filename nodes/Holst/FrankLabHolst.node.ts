@@ -6,7 +6,7 @@ export class FrankLabHolst implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'FrankLab HOLST',
 		name: 'frankLabHolst',
-		icon: 'file:holst.svg',
+		icon: { light: 'file:holst.svg', dark: 'file:holst.dark.svg' },
 		subtitle: '={{$parameter["operation"]}}',
 		group: ['transform'],
 		version: 1,

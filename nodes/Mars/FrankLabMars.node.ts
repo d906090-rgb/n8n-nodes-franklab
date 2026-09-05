@@ -123,7 +123,7 @@ export class FrankLabMars implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'FrankLab MARS',
 		name: 'frankLabMars',
-		icon: 'file:mars.svg',
+		icon: { light: 'file:mars.svg', dark: 'file:mars.dark.svg' },
 		subtitle: '={{$parameter["operation"]}}',
 		group: ['transform'],
 		version: 1,

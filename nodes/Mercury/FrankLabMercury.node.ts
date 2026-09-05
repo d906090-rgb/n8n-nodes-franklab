@@ -37,7 +37,7 @@ export class FrankLabMercury implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'FrankLab MERCURY',
 		name: 'frankLabMercury',
-		icon: 'file:mercury.svg',
+		icon: { light: 'file:mercury.svg', dark: 'file:mercury.dark.svg' },
 		subtitle: '={{$parameter["operation"]}}',
 		group: ['transform'],
 		version: 1,

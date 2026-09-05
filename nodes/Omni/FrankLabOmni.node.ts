@@ -137,7 +137,7 @@ export class FrankLabOmni implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'FrankLab OMNI',
 		name: 'frankLabOmni',
-		icon: 'file:omni.svg',
+		icon: { light: 'file:omni.svg', dark: 'file:omni.dark.svg' },
 		subtitle: '={{$parameter["operation"]}}',
 		group: ['transform'],
 		version: 1,

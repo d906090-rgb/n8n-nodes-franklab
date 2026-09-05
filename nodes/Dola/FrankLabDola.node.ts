@@ -106,7 +106,7 @@ export class FrankLabDola implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'FrankLab DOLA',
 		name: 'frankLabDola',
-		icon: 'file:dola.svg',
+		icon: { light: 'file:dola.svg', dark: 'file:dola.dark.svg' },
 		subtitle: '={{$parameter["operation"]}}',
 		group: ['transform'],
 		version: 1,

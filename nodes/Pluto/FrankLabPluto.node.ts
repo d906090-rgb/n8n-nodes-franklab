@@ -28,7 +28,7 @@ export class FrankLabPluto implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'FrankLab PLUTO',
 		name: 'frankLabPluto',
-		icon: 'file:pluto.svg',
+		icon: { light: 'file:pluto.svg', dark: 'file:pluto.dark.svg' },
 		subtitle: '={{$parameter["operation"]}}',
 		group: ['transform'],
 		version: 1,

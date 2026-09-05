@@ -85,7 +85,7 @@ export class FrankLabSufler implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'FrankLab SUFLER',
 		name: 'frankLabSufler',
-		icon: 'file:sufler.svg',
+		icon: { light: 'file:sufler.svg', dark: 'file:sufler.dark.svg' },
 		subtitle: '={{$parameter["operation"]}}',
 		group: ['transform'],
 		version: 1,

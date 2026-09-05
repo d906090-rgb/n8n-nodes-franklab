@@ -7,7 +7,7 @@ export class FrankLabAries implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'FrankLab ARIES',
 		name: 'frankLabAries',
-		icon: 'file:aries.svg',
+		icon: { light: 'file:aries.svg', dark: 'file:aries.dark.svg' },
 		subtitle: '={{$parameter["operation"]}}',
 		group: ['transform'],
 		version: 1,

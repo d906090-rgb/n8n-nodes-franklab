@@ -120,7 +120,7 @@ export class FrankLabKusok implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'FrankLab KUSOK',
 		name: 'frankLabKusok',
-		icon: 'file:kusok.svg',
+		icon: { light: 'file:kusok.svg', dark: 'file:kusok.dark.svg' },
 		subtitle: '={{$parameter["operation"]}}',
 		group: ['transform'],
 		version: 1,

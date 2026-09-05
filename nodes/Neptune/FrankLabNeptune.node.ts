@@ -35,7 +35,7 @@ export class FrankLabNeptune implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'FrankLab NEPTUNE',
 		name: 'frankLabNeptune',
-		icon: 'file:neptune.svg',
+		icon: { light: 'file:neptune.svg', dark: 'file:neptune.dark.svg' },
 		subtitle: '={{$parameter["operation"]}}',
 		group: ['transform'],
 		version: 1,

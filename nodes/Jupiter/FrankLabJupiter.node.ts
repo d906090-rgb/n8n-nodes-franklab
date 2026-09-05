@@ -84,7 +84,7 @@ export class FrankLabJupiter implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'FrankLab JUPITER',
 		name: 'frankLabJupiter',
-		icon: 'file:jupiter.svg',
+		icon: { light: 'file:jupiter.svg', dark: 'file:jupiter.dark.svg' },
 		subtitle: '={{$parameter["operation"]}}',
 		group: ['transform'],
 		version: 1,
