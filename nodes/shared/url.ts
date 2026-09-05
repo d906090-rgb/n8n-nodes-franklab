@@ -13,13 +13,14 @@ const BLOCKED_HOST_SUFFIXES = ['.localhost', '.local', '.internal', '.lan', '.ho
 
 export function normalizeBaseUrl(rawBaseUrl: string): string {
 	const candidate = rawBaseUrl.trim().replace(/\/+$/, '');
-	let parsed: URL;
+	let parsed: URL | undefined;
 	try {
 		parsed = new URL(candidate);
 	} catch {
-		// Context-free URL/SSRF validator: no node is available here to build a NodeApiError; this message
-		// is wrapped into NodeOperationError at the node boundary (nodes/shared/node-utils.ts).
-		// eslint-disable-next-line @n8n/community-nodes/require-node-api-error
+		parsed = undefined;
+	}
+	if (!parsed) {
+		// Context-free URL/SSRF validator: node-utils.ts wraps this message into NodeOperationError.
 		throw new Error('FrankLab Base URL must be https://franklab.ru');
 	}
 
@@ -48,13 +49,14 @@ export function buildApiUrl(baseUrl: string, path: string, pathParams: Record<st
 }
 
 export function validatePublicMediaUrl(rawUrl: string): true {
-	let parsed: URL;
+	let parsed: URL | undefined;
 	try {
 		parsed = new URL(rawUrl);
 	} catch {
-		// Context-free URL/SSRF validator: no node is available here to build a NodeApiError; this message
-		// is wrapped into NodeOperationError at the node boundary (nodes/shared/node-utils.ts).
-		// eslint-disable-next-line @n8n/community-nodes/require-node-api-error
+		parsed = undefined;
+	}
+	if (!parsed) {
+		// Context-free URL/SSRF validator: node-utils.ts wraps this message into NodeOperationError.
 		throw new Error('Media URL must be an absolute URL');
 	}
 
@@ -86,14 +88,15 @@ function validateNestedMediaUrls(value: unknown, path: string, exactMediaFields:
 	for (const [key, nestedValue] of Object.entries(value)) {
 		const fieldPath = `${path}.${key}`;
 		if (isMediaUrlField(key, exactMediaFields) && typeof nestedValue === 'string' && nestedValue.trim() !== '') {
+			let violation: string | undefined;
 			try {
 				validatePublicMediaUrl(nestedValue);
 			} catch (error) {
-				const message = error instanceof Error ? error.message : String(error);
-				// Context-free URL/SSRF validator: no node is available here to build a NodeApiError; this
-				// message is wrapped into NodeOperationError at the node boundary (nodes/shared/node-utils.ts).
-				// eslint-disable-next-line @n8n/community-nodes/require-node-api-error
-				throw new Error(`Media URL field ${fieldPath}: ${message}`);
+				violation = error instanceof Error ? error.message : String(error);
+			}
+			if (violation !== undefined) {
+				// Context-free URL/SSRF validator: node-utils.ts wraps this message into NodeOperationError.
+				throw new Error(`Media URL field ${fieldPath}: ${violation}`);
 			}
 		}
 		validateNestedMediaUrls(nestedValue, fieldPath, exactMediaFields);

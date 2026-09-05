@@ -86,7 +86,7 @@ test('registry covers all Make-parity module operations with route families and 
 	for (const moduleName of Object.keys(registry.MODULE_OPERATIONS)) {
 		for (const operation of registry.MODULE_OPERATIONS[moduleName]) {
 			const endpoint = registry.getEndpoint(`${moduleName}.${operation}`);
-			assert.equal(endpoint.key, `${moduleName}.${operation}`);
+			assert.equal(endpoint.endpointId, `${moduleName}.${operation}`);
 			assert.ok(endpoint.routeFamily, `${moduleName}.${operation} has a route family`);
 			assert.match(endpoint.path, /^\//, `${moduleName}.${operation} has an absolute API path`);
 			assert.ok(['Authorization', 'X-API-Key'].includes(endpoint.authHeader), `${moduleName}.${operation} has supported auth`);

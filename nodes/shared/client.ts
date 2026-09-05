@@ -139,12 +139,12 @@ function buildBody(endpoint: EndpointDefinition, input: RequestBody): RequestBod
 		body[key] = value;
 	}
 
-	const operation = defaultBodyOperation(endpoint.key);
+	const operation = defaultBodyOperation(endpoint.endpointId);
 	if (operation && !body.operation) {
 		body.operation = operation;
 	}
 
-	if (endpoint.key === 'c2pa.generateSelfSigned') {
+	if (endpoint.endpointId === 'c2pa.generateSelfSigned') {
 		body.action = 'generate_self_signed';
 	}
 
