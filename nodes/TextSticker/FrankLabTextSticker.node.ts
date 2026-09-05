@@ -35,7 +35,7 @@ export class FrankLabTextSticker implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'FrankLab TextSticker',
 		name: 'frankLabTextSticker',
-		icon: 'file:textsticker.svg',
+		icon: { light: 'file:textsticker.svg', dark: 'file:textsticker.dark.svg' },
 		subtitle: '={{$parameter["operation"]}}',
 		group: ['transform'],
 		version: 1,

@@ -6,7 +6,7 @@ export class FrankLabC2pa implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'FrankLab C2PA',
 		name: 'frankLabC2pa',
-		icon: 'file:c2pa.svg',
+		icon: { light: 'file:c2pa.svg', dark: 'file:c2pa.dark.svg' },
 		subtitle: '={{$parameter["operation"]}}',
 		group: ['transform'],
 		version: 1,

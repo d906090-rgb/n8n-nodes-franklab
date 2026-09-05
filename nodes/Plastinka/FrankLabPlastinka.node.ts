@@ -6,7 +6,7 @@ export class FrankLabPlastinka implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'FrankLab PLASTINKA',
 		name: 'frankLabPlastinka',
-		icon: 'file:plastinka.svg',
+		icon: { light: 'file:plastinka.svg', dark: 'file:plastinka.dark.svg' },
 		subtitle: '={{$parameter["operation"]}}',
 		group: ['transform'],
 		version: 1,

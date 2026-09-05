@@ -110,7 +110,7 @@ export class FrankLabMinimax implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'FrankLab MiniMax',
 		name: 'frankLabMinimax',
-		icon: 'file:minimax.svg',
+		icon: { light: 'file:minimax.svg', dark: 'file:minimax.dark.svg' },
 		subtitle: '={{$parameter["operation"]}}',
 		group: ['transform'],
 		version: 1,

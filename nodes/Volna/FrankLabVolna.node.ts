@@ -6,7 +6,7 @@ export class FrankLabVolna implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'FrankLab VOLNA',
 		name: 'frankLabVolna',
-		icon: 'file:volna.svg',
+		icon: { light: 'file:volna.svg', dark: 'file:volna.dark.svg' },
 		subtitle: '={{$parameter["operation"]}}',
 		group: ['transform'],
 		version: 1,

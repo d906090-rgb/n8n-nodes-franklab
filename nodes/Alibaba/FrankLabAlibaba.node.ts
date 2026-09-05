@@ -121,7 +121,7 @@ export class FrankLabAlibaba implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'FrankLab Alibaba',
 		name: 'frankLabAlibaba',
-		icon: 'file:alibaba.svg',
+		icon: { light: 'file:alibaba.svg', dark: 'file:alibaba.dark.svg' },
 		subtitle: '={{$parameter["operation"]}}',
 		group: ['transform'],
 		version: 1,

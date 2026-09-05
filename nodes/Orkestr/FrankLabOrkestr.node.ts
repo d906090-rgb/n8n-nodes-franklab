@@ -153,7 +153,7 @@ export class FrankLabOrkestr implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'FrankLab ORKESTR',
 		name: 'frankLabOrkestr',
-		icon: 'file:orkestr.svg',
+		icon: { light: 'file:orkestr.svg', dark: 'file:orkestr.dark.svg' },
 		subtitle: '={{$parameter["operation"]}}',
 		group: ['transform'],
 		version: 1,

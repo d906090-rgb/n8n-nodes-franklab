@@ -6,7 +6,7 @@ export class FrankLabKley implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'FrankLab KLEY',
 		name: 'frankLabKley',
-		icon: 'file:kley.svg',
+		icon: { light: 'file:kley.svg', dark: 'file:kley.dark.svg' },
 		subtitle: '={{$parameter["operation"]}}',
 		group: ['transform'],
 		version: 1,

@@ -83,7 +83,7 @@ export class FrankLabHotCoffe implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'FrankLab Hot Coffe',
 		name: 'frankLabHotCoffe',
-		icon: 'file:hotcoffe.svg',
+		icon: { light: 'file:hotcoffe.svg', dark: 'file:hotcoffe.dark.svg' },
 		subtitle: '={{$parameter["operation"]}}',
 		group: ['transform'],
 		version: 1,
