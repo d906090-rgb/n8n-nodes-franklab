@@ -293,6 +293,7 @@ Recommended release flow:
 
 ## Version History
 
+- `0.2.3`: KLEY and PLASTINKA capability operations on the pinned FFmpeg 8.1.2 build — stabilize, scene list, QC report, split screen, slow motion, denoise, HDR→SDR, animated loop, mezzanine master; analyze, spectrogram, waveform image, fingerprint, enhance dialogue, stereo tools, plus ALAC/Opus convert targets.
 - `0.2.0`: Full Make-parity wave — 20 new nodes (SUFLER, TextSticker, ORKESTR, JUPITER, MARS, SATURN, MOON, VENUS, X, MiniMax, DOLA, Alibaba, OMNI, KUSOK, MERCURY, NEPTUNE, PLUTO, ARIES, TITAN, Hot Coffe), Recraft/BRIA operations, Kling element/voice library in KUSOK, DELETE support, `billing_task_id` polling, and a standalone `scripts.test` rewrite in the public-mirror export.
 - `0.1.2`: Public-repo lint fix for hidden optional node parameters.
 - `0.1.1`: npm author email metadata.

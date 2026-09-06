@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.2.3 (2026-09-06)
+
+KLEY and PLASTINKA gain the operations that FrankLab's pinned FFmpeg 8.1.2 build could
+already perform but never exposed. No new credentials, no new routes, no billing change —
+these run through the same partner API key and the same server-side reserve →
+confirm/refund as every other operation.
+
+- KLEY (`Montage Operation`): `Stabilize` (two-pass vidstab), `Scene List` (scene-change
+  detection with an optional contact sheet), `QC Report` (black / freeze / silence / crop /
+  loudness in one pass), `Split Screen` (2–4 sources), `Slow Motion` (motion-compensated
+  interpolation), `Denoise`, `HDR to SDR`, `Animated Loop` (WebP/AVIF) and
+  `Mezzanine Master` (ProRes / DNxHR).
+- PLASTINKA (`Audio Operation`): `Analyze` (EBU R128 loudness + level statistics),
+  `Spectrogram`, `Waveform Image`, `Fingerprint` (Chromaprint), `Enhance Dialogue` and
+  `Stereo Tools`; `Convert` also accepts ALAC and Opus.
+
+Analysis-only operations (`Scene List`, `QC Report`, `Analyze`, `Fingerprint`) return a
+report and produce no downloadable file.
+
+
 ## 0.2.0 (2026-09-04)
 
 Full Make-parity wave: 12 new nodes covering every published FrankLab Make module from the
