@@ -49,6 +49,7 @@ test('registry covers all first-wave module operations with route families and a
 		'c2pa.profileOptions',
 		'c2pa.generateSelfSigned',
 		'c2pa.revokeProfile',
+		'c2pa.verify',
 	];
 
 	for (const key of required) {
@@ -187,6 +188,10 @@ test('public C2PA registry excludes private key import and rotation actions', ()
 	assert.equal(c2paOperations.includes('generateSelfSigned'), true);
 	assert.equal(c2paOperations.includes('profileOptions'), true);
 	assert.equal(c2paOperations.includes('revokeProfile'), true);
+	// Verification is a read-only partner surface: no key material, no spend, no stored file.
+	assert.equal(c2paOperations.includes('verify'), true);
+	assert.equal(registry.getEndpoint('c2pa.verify').path, '/franklab/c2pa/verify');
+	assert.deepEqual(registry.getEndpoint('c2pa.verify').costFields, []);
 });
 
 test('public media URL validation rejects local and non-http sources', () => {

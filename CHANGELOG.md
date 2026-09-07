@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.2.4 (2026-09-07)
+
+Field-level parity on two existing nodes. No new nodes, no new credentials and no billing
+change — both surfaces run through the same partner API key and the same server-side
+reserve → confirm/refund as every other operation.
+
+- ALIBABA (`Generate Video`): a `Video Model` dropdown — the default keeps the historical
+  HappyHorse 1.1 body, alongside `WAN 3.0 Video` and the two explicit HappyHorse 1.1
+  text-to-video / image-to-video values. WAN 3.0 unlocks `Audio`, `Prompt Extension` and
+  `Watermark` toggles, a `Last Frame (FrankLab Asset)` on image-to-video, and a
+  `Reference Images` list (1-10 FrankLab-hosted images) on reference-to-video, which
+  HappyHorse rejects outright. `Image to Video` now takes a full `First Frame (FrankLab
+  Asset)` descriptor (stored file ID, URL, MIME type, width, height, size in bytes) on
+  both models, instead of the previous flat fields.
+- ALIBABA (`Generate Image`): a `Qwen Operation` toggle (`Text to Image` / `Image Edit`)
+  and `Edit Image IDs` (1–3 FrankLab stored-file UUIDs).
+- C2PA: new `Verify Asset` operation backed by `POST /franklab/c2pa/verify`. It takes a
+  public HTTPS `Media URL` and returns a Content Credentials verdict (`Valid`, `Trusted`,
+  `Invalid`, `Unknown` or `NoManifest`). The check is synchronous and free: there is no
+  task to poll, no cost field, and the asset is read, reported on and discarded rather
+  than stored.
+
 ## 0.2.3 (2026-09-06)
 
 KLEY and PLASTINKA gain the operations that FrankLab's pinned FFmpeg 8.1.2 build could

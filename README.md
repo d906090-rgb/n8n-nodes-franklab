@@ -110,6 +110,9 @@ The cookbook includes Make.com and n8n editions. Use the platform switch in the 
 - Generate a self-signed signer profile.
 - Revoke a signer profile.
 - Load profile options for other FrankLab nodes.
+- Verify Content Credentials on any asset by public HTTPS URL. The verdict is `Valid`,
+  `Trusted`, `Invalid`, `Unknown` or `NoManifest`; the check is synchronous and free, and
+  the asset is read and discarded rather than stored.
 
 Public verified v1 intentionally excludes private key import and private key rotation flows.
 
@@ -224,8 +227,16 @@ Public verified v1 intentionally excludes private key import and private key rot
 
 ### Alibaba
 
-- Generate images with Alibaba Z-Image (synchronous).
+- Generate images with Alibaba Z-Image (synchronous), plus a Qwen operation toggle for
+  text-to-image and image edit (1-3 FrankLab stored-file IDs).
 - Submit HappyHorse videos (text/image to video) and estimate task cost before submitting.
+- Pick the video model: the default HappyHorse 1.1 body, WAN 3.0 Video, or an explicit
+  HappyHorse 1.1 text-to-video / image-to-video. WAN 3.0 additionally exposes audio,
+  prompt-extension and watermark toggles, a last-frame asset on image-to-video, and a
+  1-10 reference-image list on reference-to-video (HappyHorse rejects that operation).
+- Image-to-video takes a full first-frame asset descriptor (stored file ID, URL, MIME
+  type, width, height, size in bytes) on both models. The frame must already be uploaded
+  to FrankLab; an external URL is rejected.
 - Task status polling.
 - Availability depends on the FrankLab server-side Alibaba rollout flag; requests fail closed until it is enabled for your key.
 
@@ -293,6 +304,7 @@ Recommended release flow:
 
 ## Version History
 
+- `0.2.4`: ALIBABA video model selection (HappyHorse 1.1 / WAN 3.0 Video) with the WAN 3.0 audio, prompt-extension, watermark, last-frame and reference-image fields, a first-frame asset descriptor for image-to-video, and a Qwen text-to-image / image-edit toggle; C2PA gains a `Verify Asset` operation that returns a Content Credentials verdict for a public HTTPS URL.
 - `0.2.3`: KLEY and PLASTINKA capability operations on the pinned FFmpeg 8.1.2 build — stabilize, scene list, QC report, split screen, slow motion, denoise, HDR→SDR, animated loop, mezzanine master; analyze, spectrogram, waveform image, fingerprint, enhance dialogue, stereo tools, plus ALAC/Opus convert targets.
 - `0.2.0`: Full Make-parity wave — 20 new nodes (SUFLER, TextSticker, ORKESTR, JUPITER, MARS, SATURN, MOON, VENUS, X, MiniMax, DOLA, Alibaba, OMNI, KUSOK, MERCURY, NEPTUNE, PLUTO, ARIES, TITAN, Hot Coffe), Recraft/BRIA operations, Kling element/voice library in KUSOK, DELETE support, `billing_task_id` polling, and a standalone `scripts.test` rewrite in the public-mirror export.
 - `0.1.2`: Public-repo lint fix for hidden optional node parameters.
