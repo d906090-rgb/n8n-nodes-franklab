@@ -10,7 +10,7 @@ export class FrankLabC2pa implements INodeType {
 		subtitle: '={{$parameter["operation"]}}',
 		group: ['transform'],
 		version: 1,
-		description: 'Manage safe FrankLab C2PA signer profiles.',
+		description: 'Manage safe FrankLab C2PA signer profiles and verify Content Credentials on any asset.',
 		defaults: {
 			name: 'FrankLab C2PA',
 		},
@@ -35,6 +35,7 @@ export class FrankLabC2pa implements INodeType {
 					{ name: 'List Profiles', value: 'listProfiles' },
 					{ name: 'Profile Options', value: 'profileOptions' },
 					{ name: 'Revoke Profile', value: 'revokeProfile' },
+					{ name: 'Verify Asset', value: 'verify' },
 				],
 			},
 			{
@@ -44,6 +45,15 @@ export class FrankLabC2pa implements INodeType {
 				default: '',
 				required: true,
 				displayOptions: { show: { operation: ['generateSelfSigned'] } },
+			},
+			{
+				displayName: 'Media URL',
+				name: 'url',
+				type: 'string',
+				default: '',
+				required: true,
+				description: 'Public HTTPS URL of the asset to verify. Nothing is stored: the file is read, reported on, and discarded.',
+				displayOptions: { show: { operation: ['verify'] } },
 			},
 			profileIdProperty,
 		],

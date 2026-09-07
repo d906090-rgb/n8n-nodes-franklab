@@ -62,6 +62,7 @@ const JOB_OUTPUT = 'job-result';
 const PROFILE_OUTPUT = 'profile-result';
 const PROFILE_OPTIONS_OUTPUT = 'profile-options';
 const LIST_OUTPUT = 'list-result';
+const VERIFY_OUTPUT = 'verify-result';
 const VOLNA_OUTPUT = 'volna-result';
 
 function endpoint(definition: EndpointDefinition): EndpointDefinition {
@@ -707,6 +708,25 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 		costFields: [],
 		redactionFields: BEARER_REDACTION,
 	}),
+	'c2pa.verify': endpoint({
+		endpointId: 'c2pa.verify',
+		module: 'c2pa',
+		operation: 'verify',
+		routeFamily: 'franklab-c2pa-verify',
+		method: 'POST',
+		path: '/franklab/c2pa/verify',
+		authHeader: 'Authorization',
+		guard: 'PartnerSessionOrApiKeyGuard',
+		requestShape: 'url of the asset to verify',
+		responseEnvelope: 'successData',
+		statusPath: 'data.validationState',
+		// Verification is synchronous and free: one request in, one verdict out. There is no task
+		// to poll, so the terminal-status list is the verdict set itself.
+		terminalStatuses: ['Valid', 'Invalid', 'Trusted', 'Unknown', 'NoManifest'],
+		outputExtractor: VERIFY_OUTPUT,
+		costFields: [],
+		redactionFields: BEARER_REDACTION,
+	}),
 	'sufler.subtitles': jobsEndpoint('sufler', 'subtitles', 'POST', '/franklab/jobs/subtitles', 'videoUrl plus caption engine and styling fields'),
 	'sufler.getStatus': jobsEndpoint('sufler', 'getStatus', 'GET', '/franklab/jobs/:jobId', 'jobId path parameter'),
 	'textSticker.overlay': jobsEndpoint('textSticker', 'overlay', 'POST', '/franklab/jobs/overlay', 'videoUrl plus overlay payload'),
@@ -889,7 +909,7 @@ export const MODULE_OPERATIONS: Record<FrankLabModule, string[]> = {
 		'getTask',
 		'getDubbing',
 	],
-	c2pa: ['listProfiles', 'profileOptions', 'generateSelfSigned', 'revokeProfile'],
+	c2pa: ['listProfiles', 'profileOptions', 'generateSelfSigned', 'revokeProfile', 'verify'],
 	sufler: ['subtitles', 'getStatus'],
 	textSticker: [
 		'overlay',
