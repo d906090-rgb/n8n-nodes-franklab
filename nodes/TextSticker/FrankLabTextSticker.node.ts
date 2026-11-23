@@ -54,13 +54,24 @@ export class FrankLabTextSticker implements INodeType {
 		usableAsTool: true,
 		properties: [
 			{
-				displayName: 'Operation',
-				name: 'operation',
+				displayName: 'Resource',
+				name: 'resource',
 				type: 'options',
 				noDataExpression: true,
 				default: 'overlay',
 				options: [
-					{ name: 'Get Job Status', value: 'getStatus', action: 'Get an overlay job status' },
+					{ name: 'Catalog', value: 'catalog' },
+					{ name: 'Overlay', value: 'overlay' },
+				],
+			},
+			{
+				displayName: 'Operation',
+				name: 'operation',
+				type: 'options',
+				noDataExpression: true,
+				default: 'listFonts',
+				displayOptions: { show: { resource: ['catalog'] } },
+				options: [
 					{ name: 'List Aspect Ratios', value: 'listAspectRatios', action: 'List aspect ratios' },
 					{ name: 'List Emojis', value: 'listEmojis', action: 'List emojis' },
 					{ name: 'List Fonts', value: 'listFonts', action: 'List fonts' },
@@ -71,7 +82,18 @@ export class FrankLabTextSticker implements INodeType {
 					{ name: 'List Transition Sounds', value: 'listTransitionSounds', action: 'List transition sounds' },
 					{ name: 'List Transitions', value: 'listTransitions', action: 'List transitions' },
 					{ name: 'List Video Effects', value: 'listVideoEffects', action: 'List video effects' },
-					{ name: 'Overlay', value: 'overlay', action: 'Overlay text and stickers on a video' },
+				],
+			},
+			{
+				displayName: 'Operation',
+				name: 'operation',
+				type: 'options',
+				noDataExpression: true,
+				default: 'overlay',
+				displayOptions: { show: { resource: ['overlay'] } },
+				options: [
+					{ name: 'Apply', value: 'overlay', action: 'Overlay text and stickers on a video' },
+					{ name: 'Get Status', value: 'getStatus', action: 'Get an overlay job status' },
 				],
 			},
 			...overlayFields,
