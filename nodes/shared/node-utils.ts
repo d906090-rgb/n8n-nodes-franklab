@@ -36,6 +36,21 @@ export const jobIdProperty: INodeProperties = {
 				'getGoogleSubVideoStatus',
 				'getGoogleSubImageStatus',
 				'getRecraftStatus',
+				'getGeminiStatus',
+				'getGptImageCodexStatus',
+				'getYouchuanImageStatus',
+				'getYouchuanVideoStatus',
+				'getVideoExtendStatus',
+				'getMultiImageStatus',
+				'getBatchStatus',
+				'getMultipostStatus',
+				'videoStatus',
+				'imageStatus',
+				'getImportStatus',
+				'getSession',
+				'listSessionVideos',
+				'stopSession',
+				'getVideo',
 				'getAsyncTask',
 				'taskAction',
 			],
@@ -115,10 +130,59 @@ const READ_ONLY_OPERATIONS = [
 	'deleteFile',
 	'listVideos',
 	'idempotencyKey',
+	'getGeminiStatus',
+	'getGptImageCodexStatus',
+	'getYouchuanImageStatus',
+	'getYouchuanVideoStatus',
+	'getVideoExtendStatus',
+	'getMultiImageStatus',
+	'getBatchStatus',
+	'xaiVoiceList',
+	'listElevenLabsVoicesRpc',
+	'listXaiVoicesRpc',
+	'listGoogleVoicesRpc',
+	'listReleases',
+	'insights',
+	'listAccounts',
+	'listBoards',
+	'listModerationChannels',
+	'listWorkspaces',
+	'getConnectLink',
+	'getMultipostStatus',
+	'listMultipostBrands',
+	'listMultipostDestinations',
+	'listMultipostDestinationSets',
+	'videoAvailability',
+	'videoStatus',
+	'imageAvailability',
+	'imageStatus',
+	'getImportStatus',
+	'listBrands',
+	'listLibraryVideos',
+	'listSessions',
+	'listStyles',
+	'getSession',
+	'getResource',
+	'listSessionVideos',
+	'getVideo',
+	'listCredentials',
+	'listAvatarLooks',
+	'listBrandKits',
+	'listBrandGlossaries',
 ];
 
 const NO_POLL_OPERATIONS = [
 	'estimate',
+	'quoteVideo',
+	'quoteBatch',
+	'videoQuote',
+	'imageQuote',
+	'manage',
+	'multipost',
+	'moonOperation',
+	'createSession',
+	'sendMessage',
+	'stopSession',
 	'music',
 	'lyrics',
 	'style',
@@ -168,27 +232,33 @@ export const payloadProperty: INodeProperties = {
 	},
 };
 
+export async function createN8nFrankLabClient(context: IExecuteFunctions) {
+	const credentials = await context.getCredentials('frankLabApi');
+	return createFrankLabClient({
+		baseUrl: String(credentials.baseUrl),
+		apiKey: String(credentials.apiKey),
+		fetch: async (url, init) => {
+			const rawResponse = await context.helpers.httpRequest({
+				method: init.method,
+				url,
+				headers: init.headers,
+				body: init.body ? JSON.parse(init.body) : undefined,
+				json: true,
+				returnFullResponse: true,
+				ignoreHttpStatusErrors: true,
+			});
+			return responseFromHttpResult(rawResponse);
+		},
+	});
+}
+
 export async function executeFrankLabModule(
 	context: IExecuteFunctions,
 	moduleName: FrankLabModule,
 	statusOperation: string | Record<string, string>,
 ): Promise<INodeExecutionData[][]> {
 	const items = context.getInputData();
-	const credentials = await context.getCredentials('frankLabApi');
-	const client = createFrankLabClient({
-		baseUrl: String(credentials.baseUrl),
-		apiKey: String(credentials.apiKey),
-		fetch: async (url, init) => {
-			const responseBody = await context.helpers.httpRequest({
-				method: init.method,
-				url,
-				headers: init.headers,
-				body: init.body ? JSON.parse(init.body) : undefined,
-				json: true,
-			});
-			return responseFromBody(responseBody);
-		},
-	});
+	const client = await createN8nFrankLabClient(context);
 
 	const output: INodeExecutionData[] = [];
 
@@ -350,17 +420,128 @@ export function buildPayload(context: IExecuteFunctions, itemIndex: number, modu
 		'pollKind',
 		'action',
 		'media',
+		'mediaUrl',
+		'assetId',
+		'mediaId',
+		'caption',
+		'destination',
+		'connectionId',
+		'workspaceId',
+		'premoderation',
+		'moderationChannelId',
+		'moderationGroup',
+		'scheduledAt',
+		'externalRef',
+		'articleTitle',
+		'articleHtml',
+		'articleCoverUrl',
+		'aiDisclosure',
+		'releaseId',
+		'status',
+		'from',
+		'to',
+		'limit',
+		'cursor',
+		'view',
+		'platforms',
+		'connectionIds',
+		'brandIds',
+		'brandId',
+		'defaultCaption',
+		'utmMode',
+		'utmFallbackUrl',
+		'destinationSetId',
+		'destinationSetVersion',
+		'poll',
+		'confirmNoPostOnWall',
+		'confirmRemoteDelete',
+		'confirmPermanent',
+		'idempotencyKey',
+		'acceptedMaxFranks',
+		'maxCostFranks',
+		'sourceUrl',
+		'importId',
+		'clipCount',
+		'order',
+		'subtitles',
+		'captionPosition',
+		'frame',
+		'topic',
+		'copies',
+		'variantPreset',
+		'captionsEnabled',
+		'captionHint',
+		'captions',
+		'referenceAudioUrl',
+		'referenceVideoUrl',
+		'overlayImageUrl',
+		'overlayPosition',
+		'overlayScale',
+		'overlayOpacity',
+		'overlayMargin',
+		'sampleOperation',
+		'text_prompt',
+		'audio_format',
+		'audio_sample_rate',
+		'audio_speech_rate',
+		'audio_loudness_rate',
+		'audio_pitch_rate',
+		'with_timestamps',
+		'diarize',
+		'format',
+		'image_size',
+		'version',
+		'parent_task_id',
+		'image_no',
+		'video_no',
+		'video_type',
+		'batch',
+		'motion',
+		'loop',
+		'end_image_url',
+		'cfg_scale',
+		'count',
+		'quote_id',
+		'accepted_total_franks',
+		'batchId',
+		'backend',
+		'byted_token',
+		'group_id',
+		'asset_type',
+		'asset_id',
+		'project_name',
+		'page_number',
+		'providerAccountMode',
+		'providerCredentialId',
+		'sessionId',
+		'resourceId',
+		'videoId',
+		'message',
+		'avatar_id',
+		'style_id',
+		'brand_kit_id',
+		'brand_glossary_id',
+		'orientation',
+		'visibility',
+		'ownership',
+		'avatar_type',
+		'type',
+		'engine',
+		'gender',
+		'pageToken',
 	];
 
 	for (const field of simpleFields) {
 		const value = context.getNodeParameter(field, itemIndex, undefined) as unknown;
 		if (value !== undefined && value !== '') {
 			const targetField =
-			field === 'operationName' || field === 'operationMode'
-				? 'operation'
-				: field === 'recraftModel'
+				field === 'operationName' || field === 'operationMode' || field === 'sampleOperation'
+					? 'operation'
+					: field === 'recraftModel'
 						? 'model'
-						: field;
+						: field === 'pageToken'
+							? 'token'
+							: field;
 			payload[targetField] = value;
 		}
 	}
@@ -375,13 +556,50 @@ export function buildPayload(context: IExecuteFunctions, itemIndex: number, modu
 	if (operation === 'getDubbing' && payload.jobId && !payload.dubbingId) {
 		payload.dubbingId = payload.jobId;
 	}
+	if (operation === 'getBatchStatus' && payload.jobId && !payload.batchId) {
+		payload.batchId = payload.jobId;
+	}
+	if (moduleName === 'social' && operation === 'getStatus' && payload.jobId && !payload.releaseId) {
+		payload.releaseId = payload.jobId;
+	}
+	if (moduleName === 'social' && operation === 'getMultipostStatus' && payload.jobId && !payload.id) {
+		payload.id = payload.jobId;
+	}
+	if (moduleName === 'narezka' && operation === 'getImportStatus' && payload.jobId && !payload.importId) {
+		payload.importId = payload.jobId;
+	}
+	if (moduleName === 'heygenAgent') {
+		if ((operation === 'getSession' || operation === 'listSessionVideos' || operation === 'stopSession') && payload.jobId && !payload.sessionId) {
+			payload.sessionId = payload.jobId;
+		}
+		if (operation === 'getVideo' && payload.jobId && !payload.videoId) {
+			payload.videoId = payload.jobId;
+		}
+	}
+	if (moduleName === 'kusok' && operation === 'moonOperation' && !payload.backend) {
+		payload.backend = 'moon';
+	}
+	if (moduleName === 'variantPack' && operation === 'estimate' && !payload.operation) {
+		payload.operation = 'variant_pack';
+	}
 	if (operation === 'taskAction' && payload.jobId && !payload.taskId) {
 		payload.taskId = payload.jobId;
 	}
 	if (moduleName === 'dola' && operation === 'getTask') {
 		payload.billing_task_id = payload.billing_task_id ?? payload.taskId ?? payload.jobId;
 	}
-	if (operation.startsWith('get') && payload.jobId && !payload.taskId && !payload.billing_task_id && !payload.file_id) {
+	if (
+		(operation.startsWith('get') || operation === 'videoStatus' || operation === 'imageStatus') &&
+		payload.jobId &&
+		!payload.taskId &&
+		!payload.billing_task_id &&
+		!payload.file_id &&
+		!payload.batchId &&
+		!payload.releaseId &&
+		!payload.importId &&
+		!payload.sessionId &&
+		!payload.videoId
+	) {
 		payload.taskId = payload.jobId;
 	}
 	if (moduleName === 'hotCoffe' && operation === 'createVideo' && typeof payload.video_url === 'string' && payload.video_url) {
@@ -389,6 +607,17 @@ export function buildPayload(context: IExecuteFunctions, itemIndex: number, modu
 			payload.video_list = [{ video_url: payload.video_url }];
 		}
 		delete payload.video_url;
+	}
+	if (moduleName === 'omni' && (operation === 'quoteBatch' || operation === 'createBatch') && !payload.request) {
+		const topLevelKeys = new Set(['count', 'idempotency_key', 'quote_id', 'accepted_total_franks']);
+		const request: Record<string, unknown> = {};
+		for (const [k, v] of Object.entries(payload)) {
+			if (!topLevelKeys.has(k)) {
+				request[k] = v;
+				delete payload[k];
+			}
+		}
+		payload.request = request;
 	}
 	if (moduleName === 'omni' && operation === 'videoOmni' && typeof payload.video_url === 'string' && payload.video_url) {
 		if (!payload.video_list) {
@@ -408,9 +637,63 @@ export function buildPayload(context: IExecuteFunctions, itemIndex: number, modu
 		delete payload.image;
 	}
 
-	validatePublicMediaUrlsInPayload(payload, MODULE_EXACT_MEDIA_FIELDS[moduleName] ?? []);
+	validateModulePayload(moduleName, payload);
 
 	return payload;
+}
+
+export function validateModulePayload(moduleName: FrankLabModule, payload: Record<string, unknown>): void {
+	validatePublicMediaUrlsInPayload(payload, MODULE_EXACT_MEDIA_FIELDS[moduleName] ?? []);
+	validateConditionalUrls(moduleName, payload);
+}
+
+function validateConditionalUrls(moduleName: FrankLabModule, payload: Record<string, unknown>): void {
+	if (moduleName === 'social') {
+		const mediaEntries = Array.isArray(payload.media)
+			? payload.media
+			: typeof payload.media === 'string'
+				? [payload.media]
+				: [];
+		for (const entry of mediaEntries) {
+			if (typeof entry === 'string') {
+				const trimmed = entry.trim();
+				if (/^https?:\/\//i.test(trimmed)) {
+					validatePublicMediaUrl(trimmed);
+				}
+			}
+		}
+		if (typeof payload.settings === 'object' && payload.settings !== null && !Array.isArray(payload.settings)) {
+			const link = (payload.settings as Record<string, unknown>).link;
+			if (typeof link === 'string' && link.trim()) {
+				validatePublicMediaUrl(link.trim());
+			}
+		}
+	}
+	if (moduleName === 'flux') {
+		const req =
+			typeof payload.request === 'object' && payload.request !== null && !Array.isArray(payload.request)
+				? (payload.request as Record<string, unknown>)
+				: payload;
+		for (const field of ['video', 'start_video']) {
+			const val = req[field];
+			if (typeof val === 'string' && val.trim()) {
+				validatePublicMediaUrl(val.trim());
+			}
+		}
+		for (const field of ['keyframes', 'images']) {
+			const val = req[field];
+			const entries = Array.isArray(val) ? val : typeof val === 'string' ? [val] : [];
+			for (const entry of entries) {
+				const candidate = Array.isArray(entry) ? entry[1] : entry;
+				if (typeof candidate === 'string') {
+					const trimmed = candidate.trim();
+					if (/^https?:\/\//i.test(trimmed)) {
+						validatePublicMediaUrl(trimmed);
+					}
+				}
+			}
+		}
+	}
 }
 
 function resolveStatusOperation(statusOperation: string | Record<string, string>, operation: string): string {
@@ -427,15 +710,23 @@ function parsePayload(raw: string): Record<string, unknown> {
 	return parsed as Record<string, unknown>;
 }
 
-function responseFromBody(body: unknown): FetchResponse {
+function responseFromHttpResult(rawResponse: unknown): FetchResponse {
+	const isFull =
+		typeof rawResponse === 'object' &&
+		rawResponse !== null &&
+		'statusCode' in rawResponse &&
+		typeof (rawResponse as { statusCode?: unknown }).statusCode === 'number' &&
+		'body' in rawResponse;
+	const status = isFull ? Number((rawResponse as { statusCode: number }).statusCode) : 200;
+	const body = isFull ? (rawResponse as { body: unknown }).body : rawResponse;
 	return {
-		ok: true,
-		status: 200,
+		ok: status >= 200 && status < 300,
+		status,
 		async json() {
 			return body;
 		},
 		async text() {
-			return JSON.stringify(body);
+			return typeof body === 'string' ? body : JSON.stringify(body);
 		},
 	};
 }

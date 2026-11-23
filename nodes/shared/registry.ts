@@ -23,9 +23,14 @@ export type FrankLabModule =
 	| 'pluto'
 	| 'aries'
 	| 'titan'
-	| 'hotCoffe';
+	| 'hotCoffe'
+	| 'social'
+	| 'flux'
+	| 'narezka'
+	| 'variantPack'
+	| 'heygenAgent';
 export type AuthHeader = 'Authorization' | 'X-API-Key';
-export type HttpMethod = 'GET' | 'POST' | 'DELETE';
+export type HttpMethod = 'GET' | 'POST' | 'DELETE' | 'PATCH';
 export type ResponseEnvelope = 'successData' | 'codeData';
 
 export interface EndpointDefinition {
@@ -48,11 +53,17 @@ export interface EndpointDefinition {
 	bodyTransform?: 'wrapOperationPayload';
 	/** GET-only: input keys appended as query-string parameters. */
 	queryFields?: readonly string[];
+	/** Sends `Idempotency-Key` HTTP header from input.idempotencyKey / idempotency_key (stripped from body). */
+	idempotencyHeader?: boolean;
+	/** Non-2xx HTTP statuses that are valid business outcomes and should not throw. */
+	allowHttpStatuses?: readonly number[];
+	/** Treats HTTP 200 `{ code !== 200 }` codeData envelopes as errors (e.g. make/social/*). */
+	checkCodeEnvelopeError?: boolean;
 }
 
-export const SUCCESS_STATUSES = ['completed', 'success', 'succeed', 'succeeded', 'done'] as const;
-export const FAILURE_STATUSES = ['failed', 'fail', 'error', 'refunded', 'cancelled'] as const;
-export const ACTIVE_STATUSES = ['queued', 'processing'] as const;
+export const SUCCESS_STATUSES = ['completed', 'success', 'succeed', 'succeeded', 'done', 'partial_success', 'ready', 'outcome_unknown', 'awaiting_review', 'scheduled'] as const;
+export const FAILURE_STATUSES = ['failed', 'fail', 'error', 'refunded', 'cancelled', 'canceled', 'stopped'] as const;
+export const ACTIVE_STATUSES = ['queued', 'processing', 'reserved', 'importing', 'pending'] as const;
 export const TERMINAL_STATUSES = [...SUCCESS_STATUSES, ...FAILURE_STATUSES] as const;
 
 const COST_FIELDS = ['final_cost_franks', 'cost_currency', 'cost_status', 'cost_unit'] as const;
@@ -76,13 +87,21 @@ function jobsEndpoint(
 	method: HttpMethod,
 	path: string,
 	requestShape: string,
-	options: { guard?: string; outputExtractor?: string; costFields?: readonly string[]; bodyTransform?: 'wrapOperationPayload' } = {},
+	options: {
+		guard?: string;
+		outputExtractor?: string;
+		costFields?: readonly string[];
+		bodyTransform?: 'wrapOperationPayload';
+		queryFields?: readonly string[];
+		idempotencyHeader?: boolean;
+		routeFamily?: string;
+	} = {},
 ): EndpointDefinition {
 	return endpoint({
 		endpointId: `${module}.${operation}`,
 		module,
 		operation,
-		routeFamily: 'franklab-partner-jobs',
+		routeFamily: options.routeFamily ?? 'franklab-partner-jobs',
 		method,
 		path,
 		authHeader: 'Authorization',
@@ -95,6 +114,8 @@ function jobsEndpoint(
 		costFields: options.costFields ?? COST_FIELDS,
 		redactionFields: BEARER_REDACTION,
 		bodyTransform: options.bodyTransform,
+		queryFields: options.queryFields,
+		idempotencyHeader: options.idempotencyHeader,
 	});
 }
 
@@ -157,7 +178,16 @@ function makeCapabilityEndpoint(
 	method: HttpMethod,
 	path: string,
 	requestShape: string,
-	options: { guard?: string; outputExtractor?: string; costFields?: readonly string[]; bodyTransform?: 'wrapOperationPayload'; queryFields?: readonly string[] } = {},
+	options: {
+		guard?: string;
+		outputExtractor?: string;
+		costFields?: readonly string[];
+		bodyTransform?: 'wrapOperationPayload';
+		queryFields?: readonly string[];
+		idempotencyHeader?: boolean;
+		allowHttpStatuses?: readonly number[];
+		checkCodeEnvelopeError?: boolean;
+	} = {},
 ): EndpointDefinition {
 	return endpoint({
 		endpointId: `${module}.${operation}`,
@@ -177,6 +207,9 @@ function makeCapabilityEndpoint(
 		redactionFields: API_KEY_REDACTION,
 		bodyTransform: options.bodyTransform,
 		queryFields: options.queryFields,
+		idempotencyHeader: options.idempotencyHeader,
+		allowHttpStatuses: options.allowHttpStatuses,
+		checkCodeEnvelopeError: options.checkCodeEnvelopeError,
 	});
 }
 
@@ -885,18 +918,126 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 	'hotCoffe.getImageStatus': makeCapabilityEndpoint('hotCoffe', 'franklab-hot-coffe', 'getImageStatus', 'GET', '/make/hot-coffe/images/status/:taskId', 'taskId path parameter'),
 	'hotCoffe.createVideo': proxyV1Endpoint('hotCoffe', 'franklab-hot-coffe', 'createVideo', 'POST', '/v1/hot-coffe/videos/tasks', 'seedance video payload'),
 	'hotCoffe.getVideoStatus': proxyV1Endpoint('hotCoffe', 'franklab-hot-coffe', 'getVideoStatus', 'GET', '/v1/hot-coffe/videos/tasks/:taskId', 'taskId path parameter'),
+
+	// JUPITER — Make parity additions (Nano Banana, GPT Image 2 / Codex, Youchuan Midjourney).
+	'jupiter.geminiImage': proxyV1Endpoint('jupiter', 'franklab-jupiter', 'geminiImage', 'POST', '/v1/google/gemini-image', 'Nano Banana (Google Gemini Image) generation or edit payload'),
+	'jupiter.getGeminiStatus': proxyV1Endpoint('jupiter', 'franklab-jupiter', 'getGeminiStatus', 'GET', '/v1/google/gemini-image/:taskId', 'taskId path parameter'),
+	'jupiter.gptImageCodex': proxyV1Endpoint('jupiter', 'franklab-jupiter', 'gptImageCodex', 'POST', '/v1/images/gpt-image-codex', 'GPT Image 2 / Codex generation or edit payload'),
+	'jupiter.getGptImageCodexStatus': proxyV1Endpoint('jupiter', 'franklab-jupiter', 'getGptImageCodexStatus', 'GET', '/v1/images/gpt-image-codex/:taskId', 'taskId path parameter'),
+	'jupiter.youchuanImage': proxyV1Endpoint('jupiter', 'franklab-jupiter', 'youchuanImage', 'POST', '/v1/images/youchuan-mj', 'Youchuan Midjourney image operation payload'),
+	'jupiter.getYouchuanImageStatus': proxyV1Endpoint('jupiter', 'franklab-jupiter', 'getYouchuanImageStatus', 'GET', '/v1/images/youchuan-mj/:taskId', 'taskId path parameter'),
+	'jupiter.youchuanVideo': proxyV1Endpoint('jupiter', 'franklab-jupiter', 'youchuanVideo', 'POST', '/v1/videos/youchuan-mj', 'Youchuan Midjourney video operation payload'),
+	'jupiter.getYouchuanVideoStatus': proxyV1Endpoint('jupiter', 'franklab-jupiter', 'getYouchuanVideoStatus', 'GET', '/v1/videos/youchuan-mj/:taskId', 'taskId path parameter'),
+
+	// SATURN — Make parity additions (video-extend, multi-image2video).
+	'saturn.videoExtend': proxyV1Endpoint('saturn', 'franklab-saturn', 'videoExtend', 'POST', '/v1/videos/video-extend', 'video extend payload'),
+	'saturn.getVideoExtendStatus': proxyV1Endpoint('saturn', 'franklab-saturn', 'getVideoExtendStatus', 'GET', '/v1/videos/video-extend/:taskId', 'taskId path parameter'),
+	'saturn.multiImageToVideo': proxyV1Endpoint('saturn', 'franklab-saturn', 'multiImageToVideo', 'POST', '/v1/videos/multi-image2video', 'multi-image to video payload'),
+	'saturn.getMultiImageStatus': proxyV1Endpoint('saturn', 'franklab-saturn', 'getMultiImageStatus', 'GET', '/v1/videos/multi-image2video/:taskId', 'taskId path parameter'),
+
+	// VOLNA — Make parity additions (ElevenLabs v4/v4-turbo, Gemini 3.8 TTS, Seed Audio 1.0, xAI TTS/STT, Google STT, voice RPCs).
+	'volna.textToSpeechV4': makeCapabilityEndpoint('volna', 'franklab-volna', 'textToSpeechV4', 'POST', '/make/volna/tts', 'ElevenLabs v4 text-to-speech payload', { outputExtractor: VOLNA_OUTPUT }),
+	'volna.textToSpeechV4Turbo': makeCapabilityEndpoint('volna', 'franklab-volna', 'textToSpeechV4Turbo', 'POST', '/make/volna/tts', 'ElevenLabs v4 Turbo text-to-speech payload', { outputExtractor: VOLNA_OUTPUT }),
+	'volna.googleTts38': makeCapabilityEndpoint('volna', 'franklab-volna', 'googleTts38', 'POST', '/make/volna/tts', 'Gemini 3.8 TTS payload', { outputExtractor: VOLNA_OUTPUT }),
+	'volna.googleTts38FlashLite': makeCapabilityEndpoint('volna', 'franklab-volna', 'googleTts38FlashLite', 'POST', '/make/volna/tts', 'Gemini 3.8 Flash Lite TTS payload', { outputExtractor: VOLNA_OUTPUT }),
+	'volna.seedAudio': makeCapabilityEndpoint('volna', 'franklab-volna', 'seedAudio', 'POST', '/make/volna/tts', 'Seed Audio 1.0 text_prompt payload', { outputExtractor: VOLNA_OUTPUT }),
+	'volna.xaiTts': makeCapabilityEndpoint('volna', 'franklab-volna', 'xaiTts', 'POST', '/make/volna/tts', 'xAI Grok text-to-speech payload', { outputExtractor: VOLNA_OUTPUT }),
+	'volna.xaiTranscribe': makeCapabilityEndpoint('volna', 'franklab-volna', 'xaiTranscribe', 'POST', '/make/volna/tts', 'xAI Grok speech-to-text payload', { outputExtractor: VOLNA_OUTPUT }),
+	'volna.googleTranscribe': makeCapabilityEndpoint('volna', 'franklab-volna', 'googleTranscribe', 'POST', '/make/volna/tts', 'Google Gemini 3.5 speech-to-text payload', { outputExtractor: VOLNA_OUTPUT }),
+	'volna.xaiVoiceList': makeCapabilityEndpoint('volna', 'franklab-volna', 'xaiVoiceList', 'POST', '/make/volna/tts', 'xAI voice catalog request', { outputExtractor: LIST_OUTPUT, costFields: [] }),
+	'volna.listElevenLabsVoicesRpc': proxyV1Endpoint('volna', 'franklab-volna', 'listElevenLabsVoicesRpc', 'GET', '/v1/elevenlabs/voices-rpc', 'ElevenLabs voices picker list', { outputExtractor: LIST_OUTPUT, costFields: [] }),
+	'volna.listXaiVoicesRpc': proxyV1Endpoint('volna', 'franklab-volna', 'listXaiVoicesRpc', 'GET', '/v1/xai/voices-rpc', 'xAI voices picker list', { outputExtractor: LIST_OUTPUT, costFields: [] }),
+	'volna.listGoogleVoicesRpc': makeCapabilityEndpoint('volna', 'franklab-volna', 'listGoogleVoicesRpc', 'GET', '/make/volna/google/voices-rpc', 'Google Gemini voices picker list', { outputExtractor: LIST_OUTPUT, costFields: [], queryFields: ['language', 'gender'] }),
+
+	// OMNI — Make parity additions (video quote + batch quote/submit/status).
+	'omni.quoteVideo': makeCapabilityEndpoint('omni', 'franklab-omni', 'quoteVideo', 'POST', '/make/omni/videos/quote', 'OMNI/Veo video quote payload', { costFields: [] }),
+	'omni.quoteBatch': makeCapabilityEndpoint('omni', 'franklab-omni', 'quoteBatch', 'POST', '/make/omni/batches/quote', 'OMNI batch quote payload ({ count, request })', { costFields: [] }),
+	'omni.createBatch': makeCapabilityEndpoint('omni', 'franklab-omni', 'createBatch', 'POST', '/make/omni/batches', 'OMNI batch submit payload ({ count, request, idempotency_key, quote_id, accepted_total_franks })'),
+	'omni.getBatchStatus': makeCapabilityEndpoint('omni', 'franklab-omni', 'getBatchStatus', 'GET', '/make/omni/batches/:batchId', 'batchId path parameter'),
+
+	// PLASTINKA — Make parity addition (applySample translates to overlay/replace/fit + sampleId).
+	'plastinka.applySample': jobsEndpoint('plastinka', 'applySample', 'POST', '/franklab/jobs/audio', 'videoUrl + sampleId + operation (overlay|replace|fit)'),
+
+	// KUSOK — Make parity addition (unified Moon H5 verification & Seedance asset operations).
+	'kusok.moonOperation': makeCapabilityEndpoint('kusok', 'franklab-kusok', 'moonOperation', 'POST', '/make/kusok/operation', 'Moon backend operation payload ({ backend: "moon", action, ... })', { costFields: [], allowHttpStatuses: [409, 410] }),
+
+	// SOCIAL — FrankLab СОЦ СЕТИ (14 networks, status, manage, insights, multiposts, RPC pickers).
+	'social.publish': makeCapabilityEndpoint('social', 'franklab-social', 'publish', 'POST', '/make/social/publish', 'single-network social publish payload (14 platforms)', { checkCodeEnvelopeError: true }),
+	'social.getStatus': makeCapabilityEndpoint('social', 'franklab-social', 'getStatus', 'GET', '/make/social/status/:releaseId', 'releaseId path parameter + optional poll query', { queryFields: ['poll'], checkCodeEnvelopeError: true }),
+	'social.listReleases': makeCapabilityEndpoint('social', 'franklab-social', 'listReleases', 'GET', '/make/social/releases', 'optional platform, status, from, to, limit, cursor query params', { outputExtractor: LIST_OUTPUT, costFields: [], queryFields: ['platform', 'status', 'from', 'to', 'limit', 'cursor'], checkCodeEnvelopeError: true }),
+	'social.manage': makeCapabilityEndpoint('social', 'franklab-social', 'manage', 'POST', '/make/social/releases/manage', 'release management payload (list|get|edit|cancel|retry|delete|remote_edit|remote_delete)', { checkCodeEnvelopeError: true }),
+	'social.insights': makeCapabilityEndpoint('social', 'franklab-social', 'insights', 'GET', '/make/social/insights', 'view (summary|accounts|posts) + optional date/platform/connection/brand filters', { costFields: [], queryFields: ['view', 'from', 'to', 'platform', 'platforms', 'connectionIds', 'brandIds'], checkCodeEnvelopeError: true }),
+	'social.listAccounts': makeCapabilityEndpoint('social', 'franklab-social', 'listAccounts', 'GET', '/make/social/accounts', 'platform query parameter', { outputExtractor: LIST_OUTPUT, costFields: [], queryFields: ['platform'], checkCodeEnvelopeError: true }),
+	'social.listBoards': makeCapabilityEndpoint('social', 'franklab-social', 'listBoards', 'GET', '/make/social/boards', 'optional connectionId query parameter', { outputExtractor: LIST_OUTPUT, costFields: [], queryFields: ['connectionId'], checkCodeEnvelopeError: true }),
+	'social.listModerationChannels': makeCapabilityEndpoint('social', 'franklab-social', 'listModerationChannels', 'GET', '/make/social/moderation-channels', 'Telegram premoderation channels list', { outputExtractor: LIST_OUTPUT, costFields: [], checkCodeEnvelopeError: true }),
+	'social.listWorkspaces': makeCapabilityEndpoint('social', 'franklab-social', 'listWorkspaces', 'GET', '/make/social/workspaces', 'social workspaces list', { outputExtractor: LIST_OUTPUT, costFields: [], checkCodeEnvelopeError: true }),
+	'social.getConnectLink': makeCapabilityEndpoint('social', 'franklab-social', 'getConnectLink', 'GET', '/make/social/connect-link', 'platform query parameter', { costFields: [], queryFields: ['platform'], checkCodeEnvelopeError: true }),
+	'social.multipost': makeCapabilityEndpoint('social', 'franklab-social', 'multipost', 'POST', '/make/social/multiposts', 'multipost submission payload + Idempotency-Key header', { idempotencyHeader: true, checkCodeEnvelopeError: true }),
+	'social.getMultipostStatus': makeCapabilityEndpoint('social', 'franklab-social', 'getMultipostStatus', 'GET', '/make/social/multiposts/:id', 'parent multipost id path parameter', { checkCodeEnvelopeError: true }),
+	'social.listMultipostBrands': makeCapabilityEndpoint('social', 'franklab-social', 'listMultipostBrands', 'GET', '/make/social/multiposts/brands', 'active multipost brands list', { outputExtractor: LIST_OUTPUT, costFields: [], checkCodeEnvelopeError: true }),
+	'social.listMultipostDestinations': makeCapabilityEndpoint('social', 'franklab-social', 'listMultipostDestinations', 'GET', '/make/social/multiposts/destinations', 'connectionId + optional brandId, limit, cursor', { outputExtractor: LIST_OUTPUT, costFields: [], queryFields: ['connectionId', 'brandId', 'limit', 'cursor'], checkCodeEnvelopeError: true }),
+	'social.listMultipostDestinationSets': makeCapabilityEndpoint('social', 'franklab-social', 'listMultipostDestinationSets', 'GET', '/make/social/multiposts/destination-sets', 'brandId + optional limit, cursor', { outputExtractor: LIST_OUTPUT, costFields: [], queryFields: ['brandId', 'limit', 'cursor'], checkCodeEnvelopeError: true }),
+
+	// FLUX — BFL FLUX 3 Video & FLUX 3 Image / Klein.
+	'flux.videoQuote': jobsEndpoint('flux', 'videoQuote', 'POST', '/franklab/jobs/bfl/videos/quote', 'closed { request } video quote payload', { costFields: [], routeFamily: 'franklab-flux' }),
+	'flux.videoSubmit': jobsEndpoint('flux', 'videoSubmit', 'POST', '/franklab/jobs/bfl/videos', 'closed { request, idempotencyKey, acceptedMaxFranks } video submit payload', { routeFamily: 'franklab-flux' }),
+	'flux.videoAvailability': jobsEndpoint('flux', 'videoAvailability', 'GET', '/franklab/jobs/bfl/videos/availability', 'BFL video availability probe', { costFields: [], routeFamily: 'franklab-flux' }),
+	'flux.videoStatus': jobsEndpoint('flux', 'videoStatus', 'GET', '/franklab/jobs/bfl/videos/:taskId', 'taskId UUID path parameter', { routeFamily: 'franklab-flux' }),
+	'flux.imageQuote': jobsEndpoint('flux', 'imageQuote', 'POST', '/franklab/jobs/bfl/images/quote', 'closed { model, request } image quote payload', { costFields: [], routeFamily: 'franklab-flux' }),
+	'flux.imageSubmit': jobsEndpoint('flux', 'imageSubmit', 'POST', '/franklab/jobs/bfl/images', 'closed { model, request, idempotencyKey, acceptedMaxFranks } image submit payload', { routeFamily: 'franklab-flux' }),
+	'flux.imageAvailability': jobsEndpoint('flux', 'imageAvailability', 'GET', '/franklab/jobs/bfl/images/availability', 'BFL image availability probe', { costFields: [], routeFamily: 'franklab-flux' }),
+	'flux.imageStatus': jobsEndpoint('flux', 'imageStatus', 'GET', '/franklab/jobs/bfl/images/:taskId', 'taskId UUID path parameter', { routeFamily: 'franklab-flux' }),
+
+	// NAREZKA — Smart video clipping & compilation.
+	'narezka.submit': jobsEndpoint('narezka', 'submit', 'POST', '/franklab/jobs/clips', 'closed clips/compilation submit payload + Idempotency-Key header', { idempotencyHeader: true, routeFamily: 'franklab-narezka' }),
+	'narezka.estimate': jobsEndpoint('narezka', 'estimate', 'POST', '/franklab/jobs/clips/estimate', 'closed clips/compilation estimate payload', { costFields: [], routeFamily: 'franklab-narezka' }),
+	'narezka.getStatus': jobsEndpoint('narezka', 'getStatus', 'GET', '/franklab/jobs/:jobId', 'jobId UUID path parameter', { routeFamily: 'franklab-narezka' }),
+	'narezka.importSource': jobsEndpoint('narezka', 'importSource', 'POST', '/franklab/jobs/clips/sources', 'closed { sourceUrl } payload + Idempotency-Key header', { idempotencyHeader: true, costFields: [], routeFamily: 'franklab-narezka' }),
+	'narezka.getImportStatus': jobsEndpoint('narezka', 'getImportStatus', 'GET', '/franklab/jobs/clips/sources/:importId', 'importId UUID path parameter', { costFields: [], routeFamily: 'franklab-narezka' }),
+
+	// VARIANT PACK — Batch video unique copies (УНИКАЛИЗАЦИЯ).
+	'variantPack.create': jobsEndpoint('variantPack', 'create', 'POST', '/franklab/jobs/montage', 'variant_pack montage payload (videoUrl, copies, variantPreset, ...)', { routeFamily: 'franklab-variant-pack' }),
+	'variantPack.getStatus': jobsEndpoint('variantPack', 'getStatus', 'GET', '/franklab/jobs/:jobId', 'jobId path parameter', { routeFamily: 'franklab-variant-pack' }),
+	'variantPack.estimate': jobsEndpoint('variantPack', 'estimate', 'GET', '/franklab/jobs/montage/estimate', 'variant_pack estimate query parameters', { costFields: [], queryFields: ['operation', 'copies', 'variantPreset', 'variantCustomSettings', 'captions'], routeFamily: 'franklab-variant-pack' }),
+	'variantPack.listBrands': integrationListEndpoint('variantPack', 'listBrands', '/franklab/integrations/text-sticker/brands', 'partner brands picker'),
+	'variantPack.listLibraryVideos': integrationListEndpoint('variantPack', 'listLibraryVideos', '/franklab/integrations/text-sticker/library-videos', 'partner library videos picker'),
+
+	// HEYGEN AGENT — Interactive Video Agent & resource pickers.
+	'heygenAgent.generateFromPrompt': jobsEndpoint('heygenAgent', 'generateFromPrompt', 'POST', '/v1/heygen/video-agents', 'Video Agent generate payload (mode=generate)', { guard: 'PartnerCredentialSessionOrApiKeyGuard', routeFamily: 'franklab-heygen-agent' }),
+	'heygenAgent.createSession': jobsEndpoint('heygenAgent', 'createSession', 'POST', '/v1/heygen/video-agents', 'Video Agent session payload (mode=chat|generate)', { guard: 'PartnerCredentialSessionOrApiKeyGuard', routeFamily: 'franklab-heygen-agent' }),
+	'heygenAgent.listSessions': jobsEndpoint('heygenAgent', 'listSessions', 'GET', '/v1/heygen/video-agents', 'Video Agent sessions list query params', { guard: 'PartnerCredentialSessionOrApiKeyGuard', outputExtractor: LIST_OUTPUT, costFields: [], queryFields: ['providerAccountMode', 'providerCredentialId', 'limit', 'token'], routeFamily: 'franklab-heygen-agent' }),
+	'heygenAgent.listStyles': jobsEndpoint('heygenAgent', 'listStyles', 'GET', '/v1/heygen/video-agents/styles', 'Video Agent styles list', { guard: 'PartnerCredentialSessionOrApiKeyGuard', outputExtractor: LIST_OUTPUT, costFields: [], queryFields: ['providerAccountMode', 'providerCredentialId'], routeFamily: 'franklab-heygen-agent' }),
+	'heygenAgent.getSession': jobsEndpoint('heygenAgent', 'getSession', 'GET', '/v1/heygen/video-agents/:sessionId', 'sessionId path parameter', { guard: 'PartnerCredentialSessionOrApiKeyGuard', queryFields: ['providerAccountMode', 'providerCredentialId'], routeFamily: 'franklab-heygen-agent' }),
+	'heygenAgent.sendMessage': jobsEndpoint('heygenAgent', 'sendMessage', 'POST', '/v1/heygen/video-agents/:sessionId/messages', 'sessionId path parameter + message body', { guard: 'PartnerCredentialSessionOrApiKeyGuard', routeFamily: 'franklab-heygen-agent' }),
+	'heygenAgent.getResource': jobsEndpoint('heygenAgent', 'getResource', 'GET', '/v1/heygen/video-agents/:sessionId/resources/:resourceId', 'sessionId and resourceId path parameters', { guard: 'PartnerCredentialSessionOrApiKeyGuard', costFields: [], queryFields: ['providerAccountMode', 'providerCredentialId'], routeFamily: 'franklab-heygen-agent' }),
+	'heygenAgent.listSessionVideos': jobsEndpoint('heygenAgent', 'listSessionVideos', 'GET', '/v1/heygen/video-agents/:sessionId/videos', 'sessionId path parameter', { guard: 'PartnerCredentialSessionOrApiKeyGuard', outputExtractor: LIST_OUTPUT, costFields: [], queryFields: ['providerAccountMode', 'providerCredentialId'], routeFamily: 'franklab-heygen-agent' }),
+	'heygenAgent.stopSession': jobsEndpoint('heygenAgent', 'stopSession', 'POST', '/v1/heygen/video-agents/:sessionId/stop', 'sessionId path parameter', { guard: 'PartnerCredentialSessionOrApiKeyGuard', costFields: [], routeFamily: 'franklab-heygen-agent' }),
+	'heygenAgent.getVideo': jobsEndpoint('heygenAgent', 'getVideo', 'GET', '/v1/heygen/videos/:videoId', 'videoId path parameter', { guard: 'PartnerCredentialSessionOrApiKeyGuard', queryFields: ['providerAccountMode', 'providerCredentialId'], routeFamily: 'franklab-heygen-agent' }),
+	'heygenAgent.listCredentials': jobsEndpoint('heygenAgent', 'listCredentials', 'GET', '/v1/heygen/credentials', 'saved HeyGen credentials list', { guard: 'PartnerCredentialSessionOrApiKeyGuard', outputExtractor: LIST_OUTPUT, costFields: [], routeFamily: 'franklab-heygen-agent' }),
+	'heygenAgent.listAvatarLooks': jobsEndpoint('heygenAgent', 'listAvatarLooks', 'GET', '/v1/heygen/avatars/looks', 'HeyGen avatar looks list', { guard: 'PartnerCredentialSessionOrApiKeyGuard', outputExtractor: LIST_OUTPUT, costFields: [], queryFields: ['providerAccountMode', 'providerCredentialId', 'ownership', 'group_id', 'avatar_type', 'limit', 'token'], routeFamily: 'franklab-heygen-agent' }),
+	'heygenAgent.listVoices': jobsEndpoint('heygenAgent', 'listVoices', 'GET', '/v1/heygen/voices', 'HeyGen voices list', { guard: 'PartnerCredentialSessionOrApiKeyGuard', outputExtractor: LIST_OUTPUT, costFields: [], queryFields: ['providerAccountMode', 'providerCredentialId', 'type', 'engine', 'language', 'gender', 'limit', 'token'], routeFamily: 'franklab-heygen-agent' }),
+	'heygenAgent.listBrandKits': jobsEndpoint('heygenAgent', 'listBrandKits', 'GET', '/v1/heygen/brand/kits', 'HeyGen brand kits list', { guard: 'PartnerCredentialSessionOrApiKeyGuard', outputExtractor: LIST_OUTPUT, costFields: [], queryFields: ['providerAccountMode', 'providerCredentialId', 'limit', 'token'], routeFamily: 'franklab-heygen-agent' }),
+	'heygenAgent.listBrandGlossaries': jobsEndpoint('heygenAgent', 'listBrandGlossaries', 'GET', '/v1/heygen/brand/glossaries', 'HeyGen brand glossaries list', { guard: 'PartnerCredentialSessionOrApiKeyGuard', outputExtractor: LIST_OUTPUT, costFields: [], queryFields: ['providerAccountMode', 'providerCredentialId', 'limit', 'token'], routeFamily: 'franklab-heygen-agent' }),
 };
 
 export const MODULE_OPERATIONS: Record<FrankLabModule, string[]> = {
 	holst: ['submitImage', 'getStatus'],
 	kley: ['montage', 'videoSpeed', 'subtitles', 'overlay', 'getStatus'],
-	plastinka: ['processAudio', 'saveSample', 'listSamples', 'getStatus'],
+	plastinka: ['processAudio', 'applySample', 'saveSample', 'listSamples', 'getStatus'],
 	volna: [
 		'textToSpeech',
+		'textToSpeechV4',
+		'textToSpeechV4Turbo',
 		'textToDialogue',
 		'textToSpeechTurbo',
 		'googleTts',
+		'googleTts38',
+		'googleTts38FlashLite',
+		'seedAudio',
+		'xaiTts',
 		'transcribe',
+		'xaiTranscribe',
+		'googleTranscribe',
 		'soundEffect',
 		'audioIsolation',
 		'voiceClone',
@@ -904,6 +1045,10 @@ export const MODULE_OPERATIONS: Record<FrankLabModule, string[]> = {
 		'voiceDesignSave',
 		'dubbing',
 		'listVoices',
+		'xaiVoiceList',
+		'listElevenLabsVoicesRpc',
+		'listXaiVoicesRpc',
+		'listGoogleVoicesRpc',
 		'listModels',
 		'usage',
 		'getTask',
@@ -953,13 +1098,42 @@ export const MODULE_OPERATIONS: Record<FrankLabModule, string[]> = {
 		'lyriaMusic',
 		'getTaskV2',
 	],
-	jupiter: ['omniImage', 'seedreamImage', 'getOmniStatus', 'getSeedreamStatus', 'recraftImage', 'getRecraftStatus'],
+	jupiter: [
+		'omniImage',
+		'seedreamImage',
+		'getOmniStatus',
+		'getSeedreamStatus',
+		'recraftImage',
+		'getRecraftStatus',
+		'geminiImage',
+		'getGeminiStatus',
+		'gptImageCodex',
+		'getGptImageCodexStatus',
+		'youchuanImage',
+		'getYouchuanImageStatus',
+		'youchuanVideo',
+		'getYouchuanVideoStatus',
+	],
 	mars: ['textToVideo', 'imageToVideo', 'effects', 'motionControl', 'getTextStatus', 'getImageStatus', 'getEffectsStatus', 'getMotionStatus'],
-	saturn: ['video', 'turboTextToVideo', 'turboImageToVideo', 'getVideoStatus', 'getTurboStatus'],
+	saturn: [
+		'video',
+		'turboTextToVideo',
+		'turboImageToVideo',
+		'videoExtend',
+		'multiImageToVideo',
+		'getVideoStatus',
+		'getTurboStatus',
+		'getVideoExtendStatus',
+		'getMultiImageStatus',
+	],
 	omni: [
 		'info',
 		'createVideo',
+		'quoteVideo',
 		'getStatus',
+		'quoteBatch',
+		'createBatch',
+		'getBatchStatus',
 		'videoOmni',
 		'getVideoOmniStatus',
 		'googleSubVideo',
@@ -990,6 +1164,7 @@ export const MODULE_OPERATIONS: Record<FrankLabModule, string[]> = {
 		'getVoice',
 		'deleteVoice',
 		'listPresetVoices',
+		'moonOperation',
 	],
 	mercury: ['lipSync', 'advancedLipSync', 'identifyFace', 'getLipSyncStatus', 'getAdvancedLipSyncStatus'],
 	neptune: ['textToSpeech', 'getTask', 'listVoices'],
@@ -1012,6 +1187,52 @@ export const MODULE_OPERATIONS: Record<FrankLabModule, string[]> = {
 	minimax: ['createVideo', 'getTask', 'listVideos', 'taskAction', 'idempotencyKey'],
 	dola: ['generate', 'listModels', 'fileFromUrl', 'listFiles', 'getFile', 'deleteFile', 'getTask'],
 	alibaba: ['generateImage', 'generateVideo', 'estimate', 'getStatus'],
+	social: [
+		'publish',
+		'getStatus',
+		'listReleases',
+		'manage',
+		'insights',
+		'listAccounts',
+		'listBoards',
+		'listModerationChannels',
+		'listWorkspaces',
+		'getConnectLink',
+		'multipost',
+		'getMultipostStatus',
+		'listMultipostBrands',
+		'listMultipostDestinations',
+		'listMultipostDestinationSets',
+	],
+	flux: [
+		'videoQuote',
+		'videoSubmit',
+		'videoAvailability',
+		'videoStatus',
+		'imageQuote',
+		'imageSubmit',
+		'imageAvailability',
+		'imageStatus',
+	],
+	narezka: ['submit', 'estimate', 'getStatus', 'importSource', 'getImportStatus'],
+	variantPack: ['create', 'getStatus', 'estimate', 'listBrands', 'listLibraryVideos'],
+	heygenAgent: [
+		'generateFromPrompt',
+		'createSession',
+		'listSessions',
+		'listStyles',
+		'getSession',
+		'sendMessage',
+		'getResource',
+		'listSessionVideos',
+		'stopSession',
+		'getVideo',
+		'listCredentials',
+		'listAvatarLooks',
+		'listVoices',
+		'listBrandKits',
+		'listBrandGlossaries',
+	],
 };
 
 export function getEndpoint(key: string): EndpointDefinition {

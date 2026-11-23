@@ -29,6 +29,11 @@ const NODE_MODULES = [
 	['Aries', 'aries'],
 	['Titan', 'titan'],
 	['HotCoffe', 'hotCoffe'],
+	['Social', 'social'],
+	['Flux', 'flux'],
+	['Narezka', 'narezka'],
+	['VariantPack', 'variantPack'],
+	['HeyGenAgent', 'heygenAgent'],
 ];
 
 test('every node operation dropdown exactly matches its registry module operations', async () => {

@@ -31,6 +31,7 @@ export class FrankLabPlastinka implements INodeType {
 				noDataExpression: true,
 				default: 'processAudio',
 				options: [
+					{ name: 'Apply Saved Sample', value: 'applySample' },
 					{ name: 'Get Job Status', value: 'getStatus' },
 					{ name: 'List Samples', value: 'listSamples' },
 					{ name: 'Process Audio', value: 'processAudio' },
@@ -43,7 +44,20 @@ export class FrankLabPlastinka implements INodeType {
 				type: 'string',
 				default: '',
 				required: true,
-				displayOptions: { show: { operation: ['processAudio'] } },
+				displayOptions: { show: { operation: ['processAudio', 'applySample'] } },
+			},
+			{
+				displayName: 'Sample Application Mode',
+				name: 'sampleOperation',
+				type: 'options',
+				noDataExpression: true,
+				default: 'overlay',
+				options: [
+					{ name: 'Fit to Duration', value: 'fit' },
+					{ name: 'Overlay', value: 'overlay' },
+					{ name: 'Replace Audio', value: 'replace' },
+				],
+				displayOptions: { show: { operation: ['applySample'] } },
 			},
 			{
 				displayName: 'Audio URL',
@@ -76,6 +90,7 @@ export class FrankLabPlastinka implements INodeType {
 					{ name: 'Normalize', value: 'normalize' },
 					{ name: 'Overlay', value: 'overlay' },
 					{ name: 'Probe', value: 'probe' },
+					{ name: 'Quality Compare', value: 'quality_compare' },
 					{ name: 'Remove', value: 'remove' },
 					{ name: 'Replace', value: 'replace' },
 					{ name: 'Replace Tags', value: 'replace_tags' },
@@ -90,11 +105,18 @@ export class FrankLabPlastinka implements INodeType {
 				displayOptions: { show: { operation: ['processAudio'] } },
 			},
 			{
+				displayName: 'Reference Audio URL (Quality Compare)',
+				name: 'referenceAudioUrl',
+				type: 'string',
+				default: '',
+				displayOptions: { show: { operation: ['processAudio'], operationName: ['quality_compare'] } },
+			},
+			{
 				displayName: 'Sample ID',
 				name: 'sampleId',
 				type: 'string',
 				default: '',
-				displayOptions: { show: { operation: ['processAudio'] } },
+				displayOptions: { show: { operation: ['processAudio', 'applySample'] } },
 			},
 			{
 				displayName: 'Sample Name',

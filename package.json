@@ -1,6 +1,6 @@
 {
 	"name": "@apergrex/n8n-nodes-franklab",
-	"version": "0.2.4",
+	"version": "0.3.0",
 	"description": "Official FrankLab community nodes for n8n.",
 	"license": "MIT",
 	"homepage": "https://github.com/d906090-rgb/n8n-nodes-franklab#readme",
@@ -61,6 +61,8 @@
 			"dist/nodes/Aries/FrankLabAries.node.js",
 			"dist/nodes/C2pa/FrankLabC2pa.node.js",
 			"dist/nodes/Dola/FrankLabDola.node.js",
+			"dist/nodes/Flux/FrankLabFlux.node.js",
+			"dist/nodes/HeyGenAgent/FrankLabHeyGenAgent.node.js",
 			"dist/nodes/Holst/FrankLabHolst.node.js",
 			"dist/nodes/HotCoffe/FrankLabHotCoffe.node.js",
 			"dist/nodes/Jupiter/FrankLabJupiter.node.js",
@@ -70,15 +72,18 @@
 			"dist/nodes/Mercury/FrankLabMercury.node.js",
 			"dist/nodes/Minimax/FrankLabMinimax.node.js",
 			"dist/nodes/Moon/FrankLabMoon.node.js",
+			"dist/nodes/Narezka/FrankLabNarezka.node.js",
 			"dist/nodes/Neptune/FrankLabNeptune.node.js",
 			"dist/nodes/Omni/FrankLabOmni.node.js",
 			"dist/nodes/Orkestr/FrankLabOrkestr.node.js",
 			"dist/nodes/Plastinka/FrankLabPlastinka.node.js",
 			"dist/nodes/Pluto/FrankLabPluto.node.js",
 			"dist/nodes/Saturn/FrankLabSaturn.node.js",
+			"dist/nodes/Social/FrankLabSocial.node.js",
 			"dist/nodes/Sufler/FrankLabSufler.node.js",
 			"dist/nodes/TextSticker/FrankLabTextSticker.node.js",
 			"dist/nodes/Titan/FrankLabTitan.node.js",
+			"dist/nodes/VariantPack/FrankLabVariantPack.node.js",
 			"dist/nodes/Venus/FrankLabVenus.node.js",
 			"dist/nodes/Volna/FrankLabVolna.node.js",
 			"dist/nodes/X/FrankLabX.node.js"
@@ -88,8 +93,8 @@
 	"devDependencies": {
 		"@types/node": "18.19.130",
 		"eslint": "9.39.5",
-		"prettier": "3.9.6",
-		"release-it": "^19.0.4",
+		"prettier": "3.9.10",
+		"release-it": "^21.1.1",
 		"typescript": "5.9.3"
 	},
 	"peerDependencies": {
