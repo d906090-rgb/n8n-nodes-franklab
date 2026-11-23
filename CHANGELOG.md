@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.1 (2026-11-23)
+
+n8n Verified Community Node scanner compliance (`@n8n/scan-community-package` 0 errors / 0 warnings, 100% backward-compatible operation values):
+
+- Organized operations under explicit `Resource` selectors (`@n8n/community-nodes/resource-operation-pattern`) across all 11 multi-operation nodes with >5 operations: **DOLA**, **FLUX**, **HeyGen Agent**, **JUPITER**, **KUSOK**, **MARS**, **OMNI**, **SATURN**, **Social**, **TextSticker**, and **TITAN**.
+- Removed resource-name repetition in **VOLNA** operation display labels (`@n8n/community-nodes/operation-name-repeats-resource`). All underlying operation `value` identifiers remain unchanged so existing workflows continue working without migration.
+
 ## 0.3.0 (2026-11-23)
 
 Full Make.com P0 parity wave + Apergrex production domain support (30 nodes total):

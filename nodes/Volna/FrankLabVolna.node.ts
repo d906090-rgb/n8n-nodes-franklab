@@ -60,7 +60,7 @@ export class FrankLabVolna implements INodeType {
 				default: 'dubbing',
 				displayOptions: { show: { resource: ['dubbing'] } },
 				options: [
-					{ name: 'Dubbing', value: 'dubbing', action: 'Create a dubbing job' },
+					{ name: 'Create', value: 'dubbing', action: 'Create a dubbing job' },
 					{ name: 'Get Dubbing Status', value: 'getDubbing', action: 'Get dubbing status' },
 				],
 			},
@@ -71,7 +71,7 @@ export class FrankLabVolna implements INodeType {
 				noDataExpression: true,
 				default: 'listModels',
 				displayOptions: { show: { resource: ['model'] } },
-				options: [{ name: 'List Models', value: 'listModels', action: 'List models a model' }],
+				options: [{ name: 'List', value: 'listModels', action: 'List models a model' }],
 			},
 			{
 				displayName: 'Operation',
@@ -103,7 +103,7 @@ export class FrankLabVolna implements INodeType {
 				noDataExpression: true,
 				default: 'getTask',
 				displayOptions: { show: { resource: ['task'] } },
-				options: [{ name: 'Get Task', value: 'getTask', action: 'Get task a task' }],
+				options: [{ name: 'Get', value: 'getTask', action: 'Get task a task' }],
 			},
 			{
 				displayName: 'Operation',
@@ -112,7 +112,7 @@ export class FrankLabVolna implements INodeType {
 				noDataExpression: true,
 				default: 'usage',
 				displayOptions: { show: { resource: ['usage'] } },
-				options: [{ name: 'Usage', value: 'usage', action: 'Usage a usage' }],
+				options: [{ name: 'Get', value: 'usage', action: 'Get audio usage' }],
 			},
 			{
 				displayName: 'Operation',
@@ -122,9 +122,9 @@ export class FrankLabVolna implements INodeType {
 				default: 'listVoices',
 				displayOptions: { show: { resource: ['voice'] } },
 				options: [
+					{ name: 'List', value: 'listVoices', action: 'List voices a voice' },
 					{ name: 'List ElevenLabs Voices (RPC)', value: 'listElevenLabsVoicesRpc', action: 'List eleven labs voices via rpc' },
 					{ name: 'List Google Voices (RPC)', value: 'listGoogleVoicesRpc', action: 'List google gemini voices via rpc' },
-					{ name: 'List Voices', value: 'listVoices', action: 'List voices a voice' },
 					{ name: 'List xAI Voices', value: 'xaiVoiceList', action: 'List x ai voices via volna' },
 					{ name: 'List xAI Voices (RPC)', value: 'listXaiVoicesRpc', action: 'List x ai voices via rpc' },
 					{ name: 'Save Designed Voice', value: 'voiceDesignSave', action: 'Save designed voice a voice' },
