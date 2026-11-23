@@ -19,25 +19,33 @@ export class FrankLabApi implements ICredentialType {
 			displayName: 'Base URL',
 			name: 'baseUrl',
 			type: 'options',
-			default: 'https://franklab.ru/franklab/api',
+			default: 'https://apergrex.ru/franklab/api',
 			options: [
 				{
-					name: 'FrankLab Production',
+					name: 'Apergrex Production',
+					value: 'https://apergrex.ru/franklab/api',
+				},
+				{
+					name: 'Apergrex Production Root',
+					value: 'https://apergrex.ru',
+				},
+				{
+					name: 'FrankLab Production (Legacy)',
 					value: 'https://franklab.ru/franklab/api',
 				},
 				{
-					name: 'FrankLab Production Root',
+					name: 'FrankLab Production Root (Legacy)',
 					value: 'https://franklab.ru',
 				},
 			],
 			required: true,
-			description: 'The verified public package only supports the FrankLab production origin.',
+			description: 'Supported production origins: https://apergrex.ru and https://franklab.ru.',
 		},
 	];
 
 	test: ICredentialTestRequest = {
 		request: {
-			baseURL: 'https://franklab.ru/franklab/api',
+			baseURL: 'https://apergrex.ru/franklab/api',
 			url: '/franklab/integrations/text-sticker/auth/stats',
 			headers: {
 				Authorization: '=Bearer {{$credentials.apiKey}}',

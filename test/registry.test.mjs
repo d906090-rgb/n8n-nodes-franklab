@@ -6,10 +6,12 @@ const urls = await import('../dist/nodes/shared/url.js');
 const redaction = await import('../dist/nodes/shared/redaction.js');
 
 test('normalizes only the public FrankLab production API origin', () => {
+	assert.equal(urls.normalizeBaseUrl('https://apergrex.ru'), 'https://apergrex.ru/franklab/api');
+	assert.equal(urls.normalizeBaseUrl('https://apergrex.ru/franklab/api/'), 'https://apergrex.ru/franklab/api');
 	assert.equal(urls.normalizeBaseUrl('https://franklab.ru'), 'https://franklab.ru/franklab/api');
 	assert.equal(urls.normalizeBaseUrl('https://franklab.ru/franklab/api/'), 'https://franklab.ru/franklab/api');
-	assert.throws(() => urls.normalizeBaseUrl('http://127.0.0.1:3010'), /Only https:\/\/franklab\.ru/);
-	assert.throws(() => urls.normalizeBaseUrl('https://example.com/franklab/api'), /Only https:\/\/franklab\.ru/);
+	assert.throws(() => urls.normalizeBaseUrl('http://127.0.0.1:3010'), /Only https:\/\/apergrex\.ru or https:\/\/franklab\.ru/);
+	assert.throws(() => urls.normalizeBaseUrl('https://example.com/franklab/api'), /Only https:\/\/apergrex\.ru or https:\/\/franklab\.ru/);
 });
 
 test('registry covers all first-wave module operations with route families and auth headers', () => {

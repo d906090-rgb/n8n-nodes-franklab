@@ -31,9 +31,10 @@ const hotCoffeFields: INodeProperties[] = [
 		name: 'modelVariant',
 		type: 'options',
 		noDataExpression: true,
-		default: 'seedance_1_5',
+		// PUM-3b: Seedance 1.5 removed 2026-09-17 — upstream retires it after
+		// 2026-11-11 17:00 UTC+8 and the backing endpoint dies with the model.
+		default: 'seedance_2_0_fast',
 		options: [
-			{ name: 'Seedance 1.5', value: 'seedance_1_5', action: 'Use seedance 1.5' },
 			{ name: 'Seedance 2.0', value: 'seedance_2_0', action: 'Use seedance 2.0' },
 			{ name: 'Seedance 2.0 Fast', value: 'seedance_2_0_fast', action: 'Use seedance 2.0 fast' },
 		],
@@ -81,15 +82,15 @@ const hotCoffeFields: INodeProperties[] = [
 export class FrankLabHotCoffe implements INodeType {
 	// continueOnFail() is handled centrally in executeFrankLabModule.
 	description: INodeTypeDescription = {
-		displayName: 'FrankLab Hot Coffe',
+		displayName: 'FrankLab Hot Coffee',
 		name: 'frankLabHotCoffe',
 		icon: { light: 'file:hotcoffe.svg', dark: 'file:hotcoffe.dark.svg' },
 		subtitle: '={{$parameter["operation"]}}',
 		group: ['transform'],
 		version: 1,
-		description: 'Generate images and Seedance videos with FrankLab Hot Coffe (ByteDance ModelArk).',
+		description: 'Generate images and Seedance videos with FrankLab Hot Coffee (ByteDance ModelArk).',
 		defaults: {
-			name: 'FrankLab Hot Coffe',
+			name: 'FrankLab Hot Coffee',
 		},
 		inputs: [NodeConnectionTypes.Main],
 		outputs: [NodeConnectionTypes.Main],

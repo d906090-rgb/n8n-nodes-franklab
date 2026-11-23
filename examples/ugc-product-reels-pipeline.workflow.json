@@ -1,0 +1,65 @@
+{
+	"name": "Apergrex — UGC Product Reels Pipeline (MARS + KLEY)",
+	"nodes": [
+		{
+			"parameters": {},
+			"type": "n8n-nodes-base.manualTrigger",
+			"typeVersion": 1,
+			"position": [160, 240],
+			"id": "trigger-ugc-reels",
+			"name": "Manual Trigger"
+		},
+		{
+			"parameters": {
+				"operation": "textToVideo",
+				"prompt": "Minimalist cosmetic bottle on wet stone surface, soft morning sunbeams, slow 360 camera orbit, commercial product reel",
+				"duration": "5",
+				"aspect_ratio": "9:16",
+				"waitForCompletion": true
+			},
+			"type": "@apergrex/n8n-nodes-franklab.frankLabMars",
+			"typeVersion": 1,
+			"position": [420, 240],
+			"id": "mars-product-reel",
+			"name": "FrankLab MARS (Kling 3.0 720p)"
+		},
+		{
+			"parameters": {
+				"operation": "montage",
+				"videoUrl": "={{$json.videoUrl || $json.downloadUrl}}",
+				"operationName": "resize",
+				"payloadJson": "{\"width\":1080,\"height\":1920}",
+				"waitForCompletion": true
+			},
+			"type": "@apergrex/n8n-nodes-franklab.frankLabKley",
+			"typeVersion": 1,
+			"position": [700, 240],
+			"id": "kley-assemble-reel",
+			"name": "FrankLab KLEY (Resize 9:16)"
+		}
+	],
+	"connections": {
+		"Manual Trigger": {
+			"main": [
+				[
+					{
+						"node": "FrankLab MARS (Kling 3.0 720p)",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"FrankLab MARS (Kling 3.0 720p)": {
+			"main": [
+				[
+					{
+						"node": "FrankLab KLEY (Resize 9:16)",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		}
+	}
+}

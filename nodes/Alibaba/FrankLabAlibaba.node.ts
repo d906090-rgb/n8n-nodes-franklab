@@ -69,12 +69,17 @@ const videoModelField: INodeProperties = {
 	default: '',
 	options: [
 		{ name: '(Default) HappyHorse 1.1', value: '' },
-		{ name: 'WAN 3.0 Video', value: 'wan3.0-video' },
-		{ name: 'HappyHorse 1.1 (Text to Video)', value: 'happyhorse-1.1-t2v' },
+		{ name: 'HappyHorse 1.0 Video Edit', value: 'happyhorse-1.0-video-edit' },
 		{ name: 'HappyHorse 1.1 (Image to Video)', value: 'happyhorse-1.1-i2v' },
+		{ name: 'HappyHorse 1.1 (Reference to Video)', value: 'happyhorse-1.1-r2v' },
+		{ name: 'HappyHorse 1.1 (Text to Video)', value: 'happyhorse-1.1-t2v' },
+		{ name: 'WAN 2.1 KF2V Plus', value: 'wan2.1-kf2v-plus' },
+		{ name: 'WAN 2.2 KF2V Flash', value: 'wan2.2-kf2v-flash' },
+		{ name: 'WAN 3.0 Video', value: 'wan3.0-video' },
+		{ name: 'WAN 3.0 Video Prime', value: 'wan3.0-video-prime' },
 	],
 	description:
-		'Omitted (default) keeps the historical HappyHorse body. WAN 3.0 Video also accepts Audio, Prompt Extension, Watermark, Last Frame and Reference Images below; HappyHorse rejects Reference to Video entirely.',
+		'Omitted (default) keeps the historical HappyHorse body. WAN 3.0 Video / Prime also accept Audio, Prompt Extension, Watermark, Last Frame and Reference Images.',
 	displayOptions: { show: { operation: ['generateVideo'] } },
 };
 
@@ -89,12 +94,27 @@ const generateFields: INodeProperties[] = [
 		displayOptions: { show: { operation: ['generateImage', 'generateVideo'] } },
 	},
 	{
-		displayName: 'Model',
+		displayName: 'Image Model',
+		name: 'model',
+		type: 'options',
+		noDataExpression: true,
+		default: '',
+		options: [
+			{ name: '(Default) Z-Image Turbo', value: '' },
+			{ name: 'Qwen Image 3.0', value: 'qwen-image-3.0' },
+			{ name: 'Qwen Image 3.0 Pro', value: 'qwen-image-3.0-pro' },
+			{ name: 'WAN 2.7 Image Pro', value: 'wan2.7-image-pro' },
+			{ name: 'Z-Image Turbo (Explicit)', value: 'z-image-turbo' },
+		],
+		displayOptions: { show: { operation: ['generateImage'] } },
+	},
+	{
+		displayName: 'Model (Estimate)',
 		name: 'model',
 		type: 'string',
 		default: '',
-		description: "Optional image model ID (e.g. qwen-image-3.0, qwen-image-3.0-pro; omitted keeps Z-Image Turbo), or a video model ID for a video estimate",
-		displayOptions: { show: { operation: ['generateImage', 'estimate'] } },
+		description: 'Optional image or video model ID for cost estimation (e.g. qwen-image-3.0-pro, wan2.7-image-pro, wan3.0-video-prime)',
+		displayOptions: { show: { operation: ['estimate'] } },
 	},
 	// Qwen Image only (Z-Image Turbo has no edit mode). Named 'qwenOperation', not
 	// 'operation', to avoid colliding with the node's own top-level Operation dropdown;
@@ -169,9 +189,14 @@ const generateFields: INodeProperties[] = [
 		noDataExpression: true,
 		default: 'text_to_video',
 		options: [
+			{ name: 'File to Video (WAN 3.0)', value: 'file_to_video', action: 'Generate a video from a document file' },
 			{ name: 'Image to Video', value: 'image_to_video', action: 'Generate a video from a first frame' },
+			{ name: 'Keyframe to Video (WAN 2.1 / 2.2 KF2V)', value: 'keyframe_to_video', action: 'Generate a video between first and last keyframes' },
+			{ name: 'Link to Video (WAN 3.0)', value: 'link_to_video', action: 'Generate a video from a web page link' },
 			{ name: 'Reference to Video', value: 'reference_to_video', action: 'Generate a video from references' },
 			{ name: 'Text to Video', value: 'text_to_video', action: 'Generate a video from text' },
+			{ name: 'Video Edit', value: 'video_edit', action: 'Edit an existing video' },
+			{ name: 'Video Extend (WAN 3.0)', value: 'video_extend', action: 'Extend an existing video' },
 		],
 		displayOptions: { show: { operation: ['generateVideo', 'estimate'] } },
 	},
@@ -213,27 +238,26 @@ const generateFields: INodeProperties[] = [
 		name: 'audio',
 		type: 'boolean',
 		default: false,
-		description: 'Whether to request generated audio. WAN 3.0 Video only. Leaving this at the default is equivalent to omitting the field — the provider client defaults absent audio to false',
-		displayOptions: { show: { operation: ['generateVideo'], model: ['wan3.0-video'] } },
+		description: 'Whether to request generated audio. WAN 3.0 Video / Prime only.',
+		displayOptions: { show: { operation: ['generateVideo'], model: ['wan3.0-video', 'wan3.0-video-prime'] } },
 	},
 	{
 		displayName: 'Prompt Extension',
 		name: 'prompt_extend',
 		type: 'boolean',
 		default: false,
-		description: 'Whether to ask the provider to expand a short prompt. WAN 3.0 Video only.',
-		displayOptions: { show: { operation: ['generateVideo'], model: ['wan3.0-video'] } },
+		description: 'Whether to ask the provider to expand a short prompt. WAN 3.0 Video / Prime only.',
+		displayOptions: { show: { operation: ['generateVideo'], model: ['wan3.0-video', 'wan3.0-video-prime'] } },
 	},
 	{
 		displayName: 'Watermark',
 		name: 'watermark',
 		type: 'boolean',
 		default: false,
-		description: 'Whether to apply the provider watermark. WAN 3.0 Video only.',
-		displayOptions: { show: { operation: ['generateVideo'], model: ['wan3.0-video'] } },
+		description: 'Whether to apply the provider watermark. WAN 3.0 Video / Prime only.',
+		displayOptions: { show: { operation: ['generateVideo'], model: ['wan3.0-video', 'wan3.0-video-prime'] } },
 	},
-	// First/last frame apply to Image to Video only: required for HappyHorse Image to Video
-	// and WAN Image to Video, ignored for Text to Video, rejected for WAN Reference to Video.
+	// First/last frame apply to Image to Video and Keyframe to Video.
 	{
 		displayName: 'First Frame (FrankLab Asset)',
 		name: 'firstFrame',
@@ -241,9 +265,9 @@ const generateFields: INodeProperties[] = [
 		placeholder: 'Add Asset Field',
 		default: {},
 		description:
-			'Required for Image to Video (both HappyHorse and WAN). The frame must already be uploaded to FrankLab — fill in every field from the upload response; an external URL is rejected by the backend.',
+			'Required for Image to Video and Keyframe to Video. The frame must already be uploaded to FrankLab.',
 		options: FRANKLAB_ASSET_COLLECTION_OPTIONS,
-		displayOptions: { show: { operation: ['generateVideo'], operationMode: ['image_to_video'] } },
+		displayOptions: { show: { operation: ['generateVideo'], operationMode: ['image_to_video', 'keyframe_to_video'] } },
 	},
 	{
 		displayName: 'Last Frame (FrankLab Asset)',
@@ -251,12 +275,17 @@ const generateFields: INodeProperties[] = [
 		type: 'collection',
 		placeholder: 'Add Asset Field',
 		default: {},
-		description: 'WAN Image to Video only, optional. Not used by HappyHorse.',
+		description: 'Optional for WAN 3.0 Image to Video; required for WAN 2.1/2.2 Keyframe to Video',
 		options: FRANKLAB_ASSET_COLLECTION_OPTIONS,
-		displayOptions: { show: { operation: ['generateVideo'], operationMode: ['image_to_video'], model: ['wan3.0-video'] } },
+		displayOptions: {
+			show: {
+				operation: ['generateVideo'],
+				operationMode: ['image_to_video', 'keyframe_to_video'],
+				model: ['wan3.0-video', 'wan3.0-video-prime', 'wan2.2-kf2v-flash', 'wan2.1-kf2v-plus'],
+			},
+		},
 	},
-	// WAN Reference to Video only: 1-10 reference images. HappyHorse rejects this operation
-	// entirely, so this field only ever applies to WAN.
+	// WAN / HappyHorse R2V Reference Images.
 	{
 		displayName: 'Reference Images',
 		name: 'referenceImages',
@@ -264,7 +293,7 @@ const generateFields: INodeProperties[] = [
 		typeOptions: { multipleValues: true },
 		placeholder: 'Add Reference Image',
 		default: {},
-		description: 'WAN Reference to Video only: 1-10 FrankLab-hosted reference images. Rejects first/last frame, video and audio input.',
+		description: 'Reference to Video only: 1-10 FrankLab-hosted reference images',
 		options: [
 			{
 				displayName: 'Reference Image',
@@ -287,7 +316,7 @@ const generateFields: INodeProperties[] = [
 				],
 			},
 		],
-		displayOptions: { show: { operation: ['generateVideo'], operationMode: ['reference_to_video'], model: ['wan3.0-video'] } },
+		displayOptions: { show: { operation: ['generateVideo'], operationMode: ['reference_to_video'], model: ['wan3.0-video', 'wan3.0-video-prime', 'happyhorse-1.1-r2v'] } },
 	},
 	{
 		displayName: 'Media',
@@ -332,14 +361,18 @@ function buildAlibabaPayload(context: IExecuteFunctions, itemIndex: number, oper
 
 	if (operation === 'generateVideo') {
 		const videoModel = context.getNodeParameter('model', itemIndex, '') as string;
-		if (videoModel === 'wan3.0-video') {
+		const isWan3 = videoModel === 'wan3.0-video' || videoModel === 'wan3.0-video-prime';
+		const isKf2v = videoModel === 'wan2.2-kf2v-flash' || videoModel === 'wan2.1-kf2v-plus';
+		if (isWan3) {
 			payload.audio = context.getNodeParameter('audio', itemIndex, false) as boolean;
 			payload.prompt_extend = context.getNodeParameter('prompt_extend', itemIndex, false) as boolean;
 			payload.watermark = context.getNodeParameter('watermark', itemIndex, false) as boolean;
-
+		}
+		if (isWan3 || isKf2v) {
 			const lastFrame = context.getNodeParameter('lastFrame', itemIndex, {}) as Record<string, unknown>;
 			if (Object.keys(lastFrame).length > 0) payload.lastFrame = lastFrame;
-
+		}
+		if (isWan3 || videoModel === 'happyhorse-1.1-r2v') {
 			const referenceImages = context.getNodeParameter('referenceImages', itemIndex, {}) as ReferenceImageCollection;
 			if (referenceImages.referenceImage?.length) payload.media = referenceImages.referenceImage;
 		}

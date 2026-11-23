@@ -1,0 +1,115 @@
+{
+	"name": "Apergrex — AI Voiceover + Video Assembly (VOLNA + SATURN + Merge + KLEY)",
+	"nodes": [
+		{
+			"parameters": {},
+			"type": "n8n-nodes-base.manualTrigger",
+			"typeVersion": 1,
+			"position": [140, 240],
+			"id": "trigger-voice-video",
+			"name": "Manual Trigger"
+		},
+		{
+			"parameters": {
+				"operation": "textToSpeech",
+				"text": "Автоматизируйте выпуск видеороликов через единый медиа-API в рублях.",
+				"waitForCompletion": true
+			},
+			"type": "@apergrex/n8n-nodes-franklab.frankLabVolna",
+			"typeVersion": 1,
+			"position": [380, 140],
+			"id": "volna-tts",
+			"name": "FrankLab VOLNA (Voiceover)"
+		},
+		{
+			"parameters": {
+				"operation": "turboTextToVideo",
+				"prompt": "Modern creative agency studio desk with timeline monitors and warm tungsten light, smooth dolly push-in",
+				"aspect_ratio": "9:16",
+				"resolution": "720p",
+				"waitForCompletion": true
+			},
+			"type": "@apergrex/n8n-nodes-franklab.frankLabSaturn",
+			"typeVersion": 1,
+			"position": [380, 340],
+			"id": "saturn-video",
+			"name": "FrankLab SATURN (Video)"
+		},
+		{
+			"parameters": {
+				"mode": "combine",
+				"combineBy": "combineByPosition",
+				"options": {}
+			},
+			"type": "n8n-nodes-base.merge",
+			"typeVersion": 3,
+			"position": [640, 240],
+			"id": "merge-av-branches",
+			"name": "Merge Audio & Video"
+		},
+		{
+			"parameters": {
+				"operation": "overlay",
+				"videoUrl": "={{$('FrankLab SATURN (Video)').item.json.videoUrl || $('FrankLab SATURN (Video)').item.json.downloadUrl}}",
+				"payloadJson": "={\"audioUrl\":\"{{$('FrankLab VOLNA (Voiceover)').item.json.audioUrl || $('FrankLab VOLNA (Voiceover)').item.json.downloadUrl}}\"}",
+				"waitForCompletion": true
+			},
+			"type": "@apergrex/n8n-nodes-franklab.frankLabKley",
+			"typeVersion": 1,
+			"position": [900, 240],
+			"id": "kley-merge-av",
+			"name": "FrankLab KLEY (Overlay Audio)"
+		}
+	],
+	"connections": {
+		"Manual Trigger": {
+			"main": [
+				[
+					{
+						"node": "FrankLab VOLNA (Voiceover)",
+						"type": "main",
+						"index": 0
+					},
+					{
+						"node": "FrankLab SATURN (Video)",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"FrankLab VOLNA (Voiceover)": {
+			"main": [
+				[
+					{
+						"node": "Merge Audio & Video",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"FrankLab SATURN (Video)": {
+			"main": [
+				[
+					{
+						"node": "Merge Audio & Video",
+						"type": "main",
+						"index": 1
+					}
+				]
+			]
+		},
+		"Merge Audio & Video": {
+			"main": [
+				[
+					{
+						"node": "FrankLab KLEY (Overlay Audio)",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		}
+	}
+}

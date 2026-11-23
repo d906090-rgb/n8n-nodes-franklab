@@ -2,13 +2,13 @@
 
 Official FrankLab community nodes for n8n.
 
-FrankLab is a first-party media automation API for image processing, video post-production, audio processing, voice generation, dubbing, and content credential profile management. This package integrates one service: the FrankLab API at `https://franklab.ru/franklab/api`.
+FrankLab is a first-party media automation API for image processing, video post-production, audio processing, voice generation, dubbing, social publishing, and content credential profile management. This package integrates one service: the Apergrex / FrankLab API at `https://apergrex.ru/franklab/api` (or `https://franklab.ru/franklab/api`).
 
 ## What This Package Contains
 
 This repository is the public n8n connector package only. It contains:
 
-- n8n node definitions for HOLST, KLEY, PLASTINKA, VOLNA, C2PA, SUFLER, TextSticker, ORKESTR, JUPITER, MARS, SATURN, MOON, VENUS, X, MiniMax, DOLA, Alibaba, OMNI, KUSOK, MERCURY, NEPTUNE, PLUTO, ARIES, TITAN, and Hot Coffe (25 nodes). Kling runs exclusively through the SATURN node (Kling 3.0 Omni) and the MARS node (Kling 3.0).
+- n8n node definitions for HOLST, KLEY, PLASTINKA, VOLNA, C2PA, SUFLER, TextSticker, ORKESTR, JUPITER, MARS, SATURN, MOON, VENUS, X, MiniMax, DOLA, Alibaba, OMNI, KUSOK, MERCURY, NEPTUNE, PLUTO, ARIES, TITAN, Hot Coffee, Social, FLUX, Narezka, VariantPack, and HeyGen Agent (30 nodes). Kling runs exclusively through the SATURN node (Kling 3.0 Omni) and the MARS node (Kling 3.0).
 - FrankLab API credential definition.
 - A small request client that calls the public FrankLab API with your API key.
 - Tests, examples, and GitHub Actions workflows for n8n community-node verification and npm provenance publishing.
@@ -220,7 +220,7 @@ Public verified v1 intentionally excludes private key import and private key rot
 - Staged multi-element video composition: initialize, add, delete, clear, and preview element selections, then create the video.
 - Task list and task status polling.
 
-### Hot Coffe
+### Hot Coffee
 
 - Generate images and Seedance videos (ByteDance ModelArk) with operation, model variant, resolution, duration, and ratio presets.
 - Per-surface task status polling.
@@ -239,6 +239,27 @@ Public verified v1 intentionally excludes private key import and private key rot
   to FrankLab; an external URL is rejected.
 - Task status polling.
 - Availability depends on the FrankLab server-side Alibaba rollout flag; requests fail closed until it is enabled for your key.
+
+### Social
+
+- Publish, schedule, or pre-moderate posts across 14 social networks (`youtube`, `instagram`, `tiktok`, `facebook`, `threads`, `pinterest`, `telegram`, `vk`, `linkedin`, `bluesky`, `wordpress`, `ok`, `yandex_zen`, `max`).
+- Multipost submission with `Idempotency-Key`, release management (`list`, `get`, `edit`, `cancel`, `retry`, `delete`, `remote_edit`, `remote_delete`), analytics insights, and account/board/channel/brand pickers.
+
+### FLUX
+
+- Generate, edit, continue, and draft-enhance FLUX 3 Video (`t2v`, `i2v`, `v2v`, `draft_enhance`, `edit`) and FLUX 3 Image / Klein tasks with pre-run quotes, availability probes, and status polling.
+
+### Narezka
+
+- Cut long videos into vertical clips or highlight compilations with pre-run cost estimation, source URL import, `Idempotency-Key` headers, and job status polling.
+
+### VariantPack
+
+- Generate 2–100 uniquely varied video copies with presets (`light`, `standard`, `stealth`, `speech`, `balanced`, `deep`, `custom`), AI captions, cost estimates, and brand/library pickers.
+
+### HeyGen Agent
+
+- Generate AI avatar videos from prompts (with 2-stage session→video polling), run interactive Video Agent chat sessions, inspect resources, stop sessions, and list saved credentials, avatar looks, voices, styles, brand kits, and glossaries.
 
 ## Usage Notes
 
@@ -304,6 +325,7 @@ Recommended release flow:
 
 ## Version History
 
+- `0.3.0`: Make.com P0 parity wave + Apergrex production origin (`https://apergrex.ru/franklab/api`) — 5 new nodes (`Social`, `FLUX`, `Narezka`, `VariantPack`, `HeyGen Agent` -> 30 nodes total) and Make-parity upgrades across `JUPITER` (Nano Banana, GPT Image 2 / Codex, Midjourney), `SATURN` (video extend, multi-image), `VOLNA` (ElevenLabs v4/v4-turbo, Gemini 3.8 TTS, Seed Audio 1.0, xAI TTS/STT, Google STT, voice RPCs), `OMNI` (`omni_1_2`, quotes, batches), `ALIBABA` (new image/video models and operations), `KLEY` (SPEKTR/quality-compare montage ops), `PLASTINKA` (`applySample`, `quality_compare`), and `KUSOK` (Moon H5 verification & Seedance assets).
 - `0.2.4`: ALIBABA video model selection (HappyHorse 1.1 / WAN 3.0 Video) with the WAN 3.0 audio, prompt-extension, watermark, last-frame and reference-image fields, a first-frame asset descriptor for image-to-video, and a Qwen text-to-image / image-edit toggle; C2PA gains a `Verify Asset` operation that returns a Content Credentials verdict for a public HTTPS URL.
 - `0.2.3`: KLEY and PLASTINKA capability operations on the pinned FFmpeg 8.1.2 build — stabilize, scene list, QC report, split screen, slow motion, denoise, HDR→SDR, animated loop, mezzanine master; analyze, spectrogram, waveform image, fingerprint, enhance dialogue, stereo tools, plus ALAC/Opus convert targets.
 - `0.2.0`: Full Make-parity wave — 20 new nodes (SUFLER, TextSticker, ORKESTR, JUPITER, MARS, SATURN, MOON, VENUS, X, MiniMax, DOLA, Alibaba, OMNI, KUSOK, MERCURY, NEPTUNE, PLUTO, ARIES, TITAN, Hot Coffe), Recraft/BRIA operations, Kling element/voice library in KUSOK, DELETE support, `billing_task_id` polling, and a standalone `scripts.test` rewrite in the public-mirror export.

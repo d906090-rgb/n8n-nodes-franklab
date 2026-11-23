@@ -30,6 +30,7 @@ export interface FrankLabClientOptions {
 export interface PollOptions {
 	delayMs?: number;
 	maxAttempts?: number;
+	pollInput?: RequestBody;
 }
 
 export interface FrankLabClient {
@@ -37,7 +38,24 @@ export interface FrankLabClient {
 	poll(endpointKey: string, taskId: string, options?: PollOptions): Promise<Record<string, unknown>>;
 }
 
-const PATH_PARAM_NAMES = ['jobId', 'taskId', 'profileId', 'dubbingId', 'languageCode', 'file_id', 'billing_task_id', 'pollKind', 'id', 'voiceId'] as const;
+const PATH_PARAM_NAMES = [
+	'jobId',
+	'taskId',
+	'profileId',
+	'dubbingId',
+	'languageCode',
+	'file_id',
+	'billing_task_id',
+	'pollKind',
+	'id',
+	'voiceId',
+	'batchId',
+	'releaseId',
+	'importId',
+	'sessionId',
+	'resourceId',
+	'videoId',
+] as const;
 
 export function createFrankLabClient(options: FrankLabClientOptions): FrankLabClient {
 	const baseUrl = normalizeBaseUrl(options.baseUrl);
@@ -56,14 +74,25 @@ export function createFrankLabClient(options: FrankLabClientOptions): FrankLabCl
 			const maxAttempts = pollOptions.maxAttempts ?? 120;
 			let lastResult: Record<string, unknown> = {};
 
+			const endpoint = getEndpoint(endpointKey);
 			for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-				lastResult = await requestEndpoint(getEndpoint(endpointKey), baseUrl, apiKey, options.fetch, {
+				lastResult = await requestEndpoint(endpoint, baseUrl, apiKey, options.fetch, {
+					...(pollOptions.pollInput ?? {}),
 					jobId: taskId,
 					taskId,
 					dubbingId: taskId,
 					billing_task_id: taskId,
+					batchId: taskId,
+					releaseId: taskId,
+					importId: taskId,
+					sessionId: taskId,
+					videoId: taskId,
+					...(endpoint.endpointId === 'social.getStatus' ? { poll: '1' } : {}),
 				});
 				if (!lastResult.taskId) lastResult.taskId = taskId;
+				if (lastResult.pollExpired === true) {
+					return lastResult;
+				}
 				const status = lastResult.status;
 				if (isTerminalStatus(status)) {
 					if (isFailureStatus(status)) {
@@ -108,20 +137,31 @@ async function requestEndpoint(
 		headers['X-API-Key'] = apiKey;
 	}
 
+	if (endpoint.idempotencyHeader) {
+		const rawIdem = input.idempotencyKey ?? input.idempotency_key;
+		if (typeof rawIdem === 'string' && rawIdem.trim()) {
+			headers['Idempotency-Key'] = rawIdem.trim();
+		}
+	}
+
 	const init: FetchRequest = {
 		method: endpoint.method,
 		headers,
 	};
 
-	if (endpoint.method === 'POST') {
+	if (endpoint.method === 'POST' || endpoint.method === 'PATCH') {
 		headers['Content-Type'] = 'application/json';
 		init.body = JSON.stringify(buildBody(endpoint, input));
 	}
 
 	const response = await fetchTransport(url, init);
 	const body = await readResponseBody(response);
-	if (!response.ok) {
+	const statusAllowed = response.ok || (endpoint.allowHttpStatuses?.includes(response.status) ?? false);
+	if (!statusAllowed) {
 		throw new Error(extractErrorMessage(body, response.status));
+	}
+	if (endpoint.checkCodeEnvelopeError && isRecord(body) && typeof body.code === 'number' && body.code !== 200) {
+		throw new Error(extractErrorMessage(body, body.code));
 	}
 
 	return extractOutput(endpoint, body, input);
@@ -135,6 +175,7 @@ function buildBody(endpoint: EndpointDefinition, input: RequestBody): RequestBod
 	const body: RequestBody = {};
 	for (const [key, value] of Object.entries(input)) {
 		if ((PATH_PARAM_NAMES as readonly string[]).includes(key)) continue;
+		if (endpoint.idempotencyHeader && (key === 'idempotencyKey' || key === 'idempotency_key')) continue;
 		if (value === undefined || value === null || value === '') continue;
 		body[key] = value;
 	}
@@ -179,11 +220,40 @@ function extractOutput(endpoint: EndpointDefinition, body: unknown, input: Reque
 	const result = isRecord(data.result) ? data.result : data;
 	const status = result.task_status ?? result.status ?? data.status ?? root.status;
 	const taskId =
-		result.task_id ?? result.taskId ?? result.billing_task_id ?? data.taskId ?? data.billing_task_id ?? input.taskId ?? input.jobId ?? input.dubbingId;
+		result.task_id ??
+		result.taskId ??
+		result.billing_task_id ??
+		result.batch_id ??
+		result.publicationId ??
+		result.parentId ??
+		result.importId ??
+		result.sessionId ??
+		result.videoId ??
+		data.taskId ??
+		data.billing_task_id ??
+		data.batch_id ??
+		data.publicationId ??
+		data.parentId ??
+		data.importId ??
+		data.sessionId ??
+		data.videoId ??
+		input.taskId ??
+		input.jobId ??
+		input.dubbingId ??
+		input.batchId ??
+		input.releaseId ??
+		input.importId ??
+		input.sessionId ??
+		input.videoId;
 
 	if (endpoint.outputExtractor === 'list-result') {
-		const items = Array.isArray(rawData) ? rawData : Array.isArray(result.items) ? result.items : Array.isArray(result.profiles) ? result.profiles : [];
-		return { items, profiles: items, data: items };
+		const items = extractListItems(rawData, result);
+		const extra: Record<string, unknown> = {};
+		for (const field of ['count', 'hasMore', 'nextCursor', 'nextToken', 'total_count']) {
+			if (result[field] !== undefined) extra[field] = result[field];
+			else if (data[field] !== undefined) extra[field] = data[field];
+		}
+		return { ...extra, items, profiles: items, data: items };
 	}
 	if (endpoint.outputExtractor === 'profile-options') {
 		const items = Array.isArray(rawData) ? rawData : Array.isArray(result.items) ? result.items : Array.isArray(result.profiles) ? result.profiles : [];
@@ -194,16 +264,51 @@ function extractOutput(endpoint: EndpointDefinition, body: unknown, input: Reque
 		return { options, items, data: options };
 	}
 
+	const nestedVideo = isRecord(result.video) ? result.video : undefined;
+	const videoUrl =
+		result.videoUrl ??
+		data.videoUrl ??
+		nestedVideo?.video_url ??
+		nestedVideo?.videoUrl ??
+		nestedVideo?.url ??
+		firstUrl(result.task_result, 'videos');
+
 	return {
 		...result,
 		...pickCostFields(data),
 		taskId,
 		status,
 		audioUrl: result.audioUrl ?? result.resultUrl ?? firstUrl(result.task_result, 'audios'),
-		resultUrl: result.resultUrl ?? result.audioUrl ?? firstUrl(result.task_result, 'audios') ?? firstUrl(result.task_result, 'videos'),
-		downloadUrl: result.downloadUrl ?? data.downloadUrl,
+		...(videoUrl !== undefined ? { videoUrl } : {}),
+		resultUrl: result.resultUrl ?? result.audioUrl ?? videoUrl ?? firstUrl(result.task_result, 'audios'),
+		downloadUrl: result.downloadUrl ?? data.downloadUrl ?? nestedVideo?.download_url ?? nestedVideo?.downloadUrl,
 		error: result.error ?? data.error ?? root.message ?? root.msg ?? null,
 	};
+}
+
+function extractListItems(rawData: unknown, result: Record<string, unknown>): unknown[] {
+	if (Array.isArray(rawData)) return rawData;
+	const arrayKeys = [
+		'items',
+		'profiles',
+		'releases',
+		'accounts',
+		'boards',
+		'channels',
+		'workspaces',
+		'brands',
+		'destinations',
+		'sets',
+		'sessions',
+		'styles',
+		'videos',
+		'avatarLooks',
+		'voices',
+	];
+	for (const key of arrayKeys) {
+		if (Array.isArray(result[key])) return result[key] as unknown[];
+	}
+	return [];
 }
 
 function extractErrorMessage(body: unknown, status: number): string {
@@ -243,12 +348,32 @@ function defaultBodyOperation(endpointKey: string): string | null {
 	switch (endpointKey) {
 		case 'volna.textToSpeech':
 			return 'text-to-speech';
+		case 'volna.textToSpeechV4':
+			return 'text-to-speech-v4';
+		case 'volna.textToSpeechV4Turbo':
+			return 'text-to-speech-v4-turbo';
 		case 'volna.textToDialogue':
 			return 'text-to-dialogue';
 		case 'volna.textToSpeechTurbo':
 			return 'text-to-speech-turbo';
 		case 'volna.googleTts':
 			return 'google-3-1-tts';
+		case 'volna.googleTts38':
+			return 'google-3-8-tts';
+		case 'volna.googleTts38FlashLite':
+			return 'google-3-8-flash-lite-tts';
+		case 'volna.seedAudio':
+			return 'seed-audio-1-0';
+		case 'volna.xaiTts':
+			return 'xai-text-to-speech';
+		case 'volna.xaiTranscribe':
+			return 'xai-speech-to-text';
+		case 'volna.googleTranscribe':
+			return 'google-speech-to-text';
+		case 'volna.xaiVoiceList':
+			return 'xai-voice-list';
+		case 'variantPack.create':
+			return 'variant_pack';
 		default:
 			return null;
 	}

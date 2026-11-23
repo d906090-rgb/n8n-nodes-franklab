@@ -29,6 +29,8 @@ test('package metadata is eligible for n8n community verification', () => {
 		'dist/nodes/Aries/FrankLabAries.node.js',
 		'dist/nodes/C2pa/FrankLabC2pa.node.js',
 		'dist/nodes/Dola/FrankLabDola.node.js',
+		'dist/nodes/Flux/FrankLabFlux.node.js',
+		'dist/nodes/HeyGenAgent/FrankLabHeyGenAgent.node.js',
 		'dist/nodes/Holst/FrankLabHolst.node.js',
 		'dist/nodes/HotCoffe/FrankLabHotCoffe.node.js',
 		'dist/nodes/Jupiter/FrankLabJupiter.node.js',
@@ -38,20 +40,23 @@ test('package metadata is eligible for n8n community verification', () => {
 		'dist/nodes/Mercury/FrankLabMercury.node.js',
 		'dist/nodes/Minimax/FrankLabMinimax.node.js',
 		'dist/nodes/Moon/FrankLabMoon.node.js',
+		'dist/nodes/Narezka/FrankLabNarezka.node.js',
 		'dist/nodes/Neptune/FrankLabNeptune.node.js',
 		'dist/nodes/Omni/FrankLabOmni.node.js',
 		'dist/nodes/Orkestr/FrankLabOrkestr.node.js',
 		'dist/nodes/Plastinka/FrankLabPlastinka.node.js',
 		'dist/nodes/Pluto/FrankLabPluto.node.js',
 		'dist/nodes/Saturn/FrankLabSaturn.node.js',
+		'dist/nodes/Social/FrankLabSocial.node.js',
 		'dist/nodes/Sufler/FrankLabSufler.node.js',
 		'dist/nodes/TextSticker/FrankLabTextSticker.node.js',
 		'dist/nodes/Titan/FrankLabTitan.node.js',
+		'dist/nodes/VariantPack/FrankLabVariantPack.node.js',
 		'dist/nodes/Venus/FrankLabVenus.node.js',
 		'dist/nodes/Volna/FrankLabVolna.node.js',
-		'dist/nodes/X/FrankLabX.node.js'
+		'dist/nodes/X/FrankLabX.node.js',
 	]);
-	assert.equal(packageJson.version, '0.2.4');
+	assert.equal(packageJson.version, '0.3.0');
 	// Monorepo tree keeps the host-lock wrapper; the public-mirror export rewrites
 	// scripts.test to the standalone form, so both are valid depending on environment.
 	assert.ok(
@@ -68,9 +73,13 @@ test('package metadata is eligible for n8n community verification', () => {
 	assert.equal(toolingPackageJson.private, true);
 	assert.equal(toolingPackageJson.devDependencies['@n8n/node-cli'], '0.46.2');
 	assert.deepEqual(toolingPackageJson.overrides, {
+		axios: '^1.20.0',
 		'@n8n/utils': {
 			nanoid: '^3.3.17',
 		},
+		// handlebars 4.7.10 (2026-10-14 drift triage): @n8n/node-cli pins 4.7.9 exactly;
+		// GHSA-8R5X-FM3F-WHWJ + GHSA-P8WG-VRV2-V86F affect <=4.7.9. Dev-only tooling tree.
+		handlebars: '4.7.10',
 	});
 	assert.equal(packageJson.scripts.build, 'node tooling/run-node-cli.mjs build');
 	assert.equal(
@@ -84,5 +93,22 @@ test('public workflows install and cache both deterministic development contours
 		assert.match(workflow, /cache-dependency-path:\s*\|\s*\n\s+package-lock\.json\s*\n\s+tooling\/package-lock\.json/);
 		assert.match(workflow, /run: npm ci --ignore-scripts/);
 		assert.match(workflow, /run: npm run tooling:ci/, `${name} must install private tooling`);
+	}
+});
+
+test('public Undici acceptance cannot cover a vulnerable private tooling copy', async () => {
+	// The advisory job aggregates both locks under one workspace acceptance.
+	// Keep its temporary public release-it exception out of the fixable tooling tree.
+	const lock = JSON.parse(await readFile(new URL('../tooling/package-lock.json', import.meta.url), 'utf8'));
+	const copies = Object.entries(lock.packages).filter(([location, entry]) =>
+		entry.name === 'undici' || /(?:^|\/)node_modules\/undici$/.test(location),
+	);
+	assert.ok(copies.length > 0, 'private tooling Undici inventory must remain explicit');
+	for (const [location, entry] of copies) {
+		const match = /^7\.(\d+)\.(\d+)$/.exec(entry.version);
+		assert.ok(
+			match && (Number(match[1]) > 30 || (Number(match[1]) === 30 && Number(match[2]) >= 1)),
+			`private tooling Undici must stay on a reviewed patched 7.x release (>=7.30.1): ${location}=${entry.version}`,
+		);
 	}
 });

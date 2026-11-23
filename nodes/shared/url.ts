@@ -1,5 +1,4 @@
-const FRANKLAB_ORIGIN = 'https://franklab.ru';
-const FRANKLAB_API_BASE = `${FRANKLAB_ORIGIN}/franklab/api`;
+const ALLOWED_PRODUCTION_HOSTS = new Set(['apergrex.ru', 'franklab.ru']);
 
 const BLOCKED_HOSTS = new Set([
 	'localhost',
@@ -21,19 +20,19 @@ export function normalizeBaseUrl(rawBaseUrl: string): string {
 	}
 	if (!parsed) {
 		// Context-free URL/SSRF validator: node-utils.ts wraps this message into NodeOperationError.
-		throw new Error('FrankLab Base URL must be https://franklab.ru');
+		throw new Error('Base URL must be https://apergrex.ru or https://franklab.ru');
 	}
 
-	if (parsed.protocol !== 'https:' || parsed.hostname !== 'franklab.ru') {
-		throw new Error('Only https://franklab.ru is allowed for the public FrankLab n8n package');
+	if (parsed.protocol !== 'https:' || !ALLOWED_PRODUCTION_HOSTS.has(parsed.hostname)) {
+		throw new Error('Only https://apergrex.ru or https://franklab.ru is allowed for the public FrankLab n8n package');
 	}
 
 	const path = parsed.pathname.replace(/\/+$/, '');
 	if (path === '' || path === '/' || path === '/franklab/api') {
-		return FRANKLAB_API_BASE;
+		return `https://${parsed.hostname}/franklab/api`;
 	}
 
-	throw new Error('FrankLab Base URL must be https://franklab.ru or https://franklab.ru/franklab/api');
+	throw new Error('Base URL must be https://apergrex.ru, https://apergrex.ru/franklab/api, https://franklab.ru, or https://franklab.ru/franklab/api');
 }
 
 export function buildApiUrl(baseUrl: string, path: string, pathParams: Record<string, unknown> = {}): string {

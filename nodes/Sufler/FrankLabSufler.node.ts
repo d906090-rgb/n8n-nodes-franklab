@@ -47,10 +47,13 @@ const subtitleFields: INodeProperties[] = [
 		noDataExpression: true,
 		default: '',
 		options: [
+			// Alphabetised by `name` and title-cased: the n8n node linter enforces both, and a
+			// fifth option is what pushed this list past the rule's threshold.
 			{ name: 'Auto', value: '', action: 'Let the server pick the transcription engine' },
+			{ name: 'ElevenLabs Scribe V2', value: 'elevenlabs_scribe', action: 'Use ElevenLabs Scribe transcription' },
+			{ name: 'Gemini', value: 'gemini', action: 'Use Gemini transcription' },
 			{ name: 'Whisper', value: 'whisper', action: 'Use Whisper transcription' },
 			{ name: 'xAI Grok Transcribe', value: 'xai_grok_transcribe', action: 'Use xAI Grok transcription' },
-			{ name: 'Gemini', value: 'gemini', action: 'Use Gemini transcription' },
 		],
 		displayOptions: { show: { operation: ['subtitles'] } },
 	},

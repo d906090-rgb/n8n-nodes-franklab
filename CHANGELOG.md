@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.3.0 (2026-11-23)
+
+Full Make.com P0 parity wave + Apergrex production domain support (30 nodes total):
+
+- **Production origin (`apergrex.ru`)**: `FrankLabApi` credentials and URL validator now accept both `https://apergrex.ru/franklab/api` (`https://apergrex.ru`) and `https://franklab.ru/franklab/api` (`https://franklab.ru`), plus 3 ready-to-import starter workflows in `examples/`.
+- **5 new P0 nodes**:
+  - **FrankLab Social** (`frankLabSocial`): publish, poll status, manage releases, read insights, multipost with `Idempotency-Key`, and list accounts/boards/moderation channels/workspaces/brands/destinations across all 14 social networks (`youtube`, `instagram`, `tiktok`, `facebook`, `threads`, `pinterest`, `telegram`, `vk`, `linkedin`, `bluesky`, `wordpress`, `ok`, `yandex_zen`, `max`).
+  - **FrankLab FLUX** (`frankLabFlux`): FLUX 3 Video (`t2v`, `i2v`, `v2v`, `draft_enhance`, `edit`) and FLUX 3 Image / Klein with closed-body validation, auto-quote `acceptedMaxFranks`, availability probes, and status polling.
+  - **FrankLab Narezka** (`frankLabNarezka`): smart vertical clipping (`clips`) and highlight compilations (`compilation`) with cost estimation, source URL import, `Idempotency-Key` headers, and polling.
+  - **FrankLab VariantPack** (`frankLabVariantPack`): batch 2–100 uniquely varied video copies with Make presets (`light`, `standard`, `stealth`, `speech`, `balanced`, `deep`, `custom`), AI captions, cost estimates, and brand/library pickers.
+  - **FrankLab HeyGen Agent** (`frankLabHeyGenAgent`): prompt-to-video with 2-stage session→video polling, interactive chat sessions, message sending, resource retrieval, stop session, and pickers for saved credentials, avatar looks, voices, styles, brand kits, and glossaries.
+- **8 upgraded existing nodes (Make parity)**:
+  - **JUPITER**: added Nano Banana (Google Gemini Image), GPT Image 2 / Codex, and Youchuan Midjourney (image & video) + status routes.
+  - **SATURN**: added Video Extend (`/v1/videos/video-extend`) and Multi-Image to Video (`/v1/videos/multi-image2video`) + status routes.
+  - **VOLNA**: added ElevenLabs v4 / v4 Turbo, Google Gemini 3.8 / 3.8 Flash Lite TTS, BytePlus Seed Audio 1.0, xAI Grok TTS & STT, Google Gemini 3.5 STT, xAI Voice List, and ElevenLabs / xAI / Google voice RPCs.
+  - **OMNI**: added `omni_1_2` model, `Quote Video`, `Quote Batch`, `Create Batch`, and `Get Batch Status` (with `partial_success` terminal handling).
+  - **ALIBABA**: added Image models (`z-image-turbo`, `qwen-image-3.0`, `qwen-image-3.0-pro`, `wan2.7-image-pro`), Video models (`wan3.0-video-prime`, `happyhorse-1.1-r2v`, `happyhorse-1.0-video-edit`, `wan2.2-kf2v-flash`, `wan2.1-kf2v-plus`), and full video operations (`video_edit`, `keyframe_to_video`, `video_extend`, `file_to_video`, `link_to_video`).
+  - **KLEY**: added `round`, `remove_bg`, `chroma_key`, `waveform`, `bria_video_replace_bg`, `bria_video_erase_object`, `variant_pack`, `quality_compare` montage operations and `overlayImageUrl` on `overlay`.
+  - **PLASTINKA**: added `applySample` operation (`overlay`/`replace`/`fit` + `sampleId`) and `quality_compare` (`referenceAudioUrl`).
+  - **KUSOK**: added `moonOperation` (`POST /make/kusok/operation`, `backend: 'moon'`) covering H5 verification (`verify_start`, `verify_get_result` with 409/410 status passthrough) and Seedance asset management (`create_asset`, `get_asset`, `list_assets`).
+
 ## 0.2.4 (2026-09-07)
 
 Field-level parity on two existing nodes. No new nodes, no new credentials and no billing

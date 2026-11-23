@@ -409,3 +409,122 @@ test('client submits Seedance videos to the hot-coffe v1 route', async () => {
 	assert.equal(body.modelVariant, 'seedance_2_0');
 });
 
+test('client accepts apergrex.ru production origin for media API calls', async () => {
+	const calls = [];
+	const client = createFrankLabClient({
+		baseUrl: 'https://apergrex.ru/franklab/api',
+		apiKey: 'test_public_key',
+		fetch: async (url, init) => {
+			calls.push({ url, init });
+			return jsonResponse({ code: 200, data: { task_id: 'apx_1', status: 'queued' } });
+		},
+	});
+
+	const result = await client.request('hotCoffe.createVideo', { operation: 'text_to_video', modelVariant: 'seedance_2_0', prompt: 'product showcase' });
+
+	assert.equal(result.taskId, 'apx_1');
+	assert.equal(calls[0].url, 'https://apergrex.ru/franklab/api/v1/hot-coffe/videos/tasks');
+});
+
+test('client sends Idempotency-Key header and strips it from body on social.multipost and narezka.submit', async () => {
+	const calls = [];
+	const client = createFrankLabClient({
+		baseUrl: 'https://apergrex.ru',
+		apiKey: 'test_public_key',
+		fetch: async (url, init) => {
+			calls.push({ url, init });
+			return jsonResponse({ code: 200, data: { parentId: 'mp_1', taskId: 'clip_1', status: 'queued' } });
+		},
+	});
+
+	await client.request('social.multipost', { brandId: 'b1', title: 'Launch', media: 'uuid-1', idempotencyKey: 'idem-mp-001' });
+	assert.equal(calls[0].init.headers['Idempotency-Key'], 'idem-mp-001');
+	assert.equal(JSON.parse(calls[0].init.body).idempotencyKey, undefined);
+
+	await client.request('narezka.submit', { sourceUrl: 'https://cdn.example.com/v.mp4', mode: 'clips', idempotencyKey: 'idem-clip-001' });
+	assert.equal(calls[1].init.headers['Idempotency-Key'], 'idem-clip-001');
+	assert.equal(calls[1].init.headers.Authorization, 'Bearer test_public_key');
+	assert.equal(JSON.parse(calls[1].init.body).idempotencyKey, undefined);
+});
+
+test('client throws on social HTTP 200 codeData logical error and stops cleanly on pollExpired', async () => {
+	const errorClient = createFrankLabClient({
+		baseUrl: 'https://apergrex.ru',
+		apiKey: 'test_public_key',
+		fetch: async () => jsonResponse({ code: 400, msg: 'Caption too long', data: { error: 'Caption too long' } }),
+	});
+	await assert.rejects(() => errorClient.request('social.publish', { platform: 'telegram', caption: 'x' }), /Caption too long/);
+
+	const pollCalls = [];
+	const pollClient = createFrankLabClient({
+		baseUrl: 'https://apergrex.ru',
+		apiKey: 'test_public_key',
+		fetch: async (url) => {
+			pollCalls.push(url);
+			return jsonResponse({ code: 200, data: { status: 'processing', pollExpired: true } });
+		},
+	});
+	const res = await pollClient.poll('social.getStatus', 'rel_123', { delayMs: 0, maxAttempts: 5 });
+	assert.equal(res.pollExpired, true);
+	assert.equal(pollCalls.length, 1);
+	assert.equal(pollCalls[0], 'https://apergrex.ru/franklab/api/make/social/status/rel_123?poll=1');
+});
+
+test('client allows HTTP 409 and 410 business outcomes on kusok.moonOperation', async () => {
+	const client = createFrankLabClient({
+		baseUrl: 'https://apergrex.ru',
+		apiKey: 'test_public_key',
+		fetch: async () => ({
+			ok: false,
+			status: 409,
+			async json() {
+				return { code: 200, data: { status: 'failed', result_code: 'FACE_MISMATCH' } };
+			},
+			async text() {
+				return '';
+			},
+		}),
+	});
+	const res = await client.request('kusok.moonOperation', { backend: 'moon', action: 'verify_get_result', byted_token: 'bt_1' });
+	assert.equal(res.status, 'failed');
+	assert.equal(res.result_code, 'FACE_MISMATCH');
+});
+
+test('client polls omni.getBatchStatus via batchId and terminates on partial_success', async () => {
+	const calls = [];
+	const client = createFrankLabClient({
+		baseUrl: 'https://apergrex.ru',
+		apiKey: 'test_public_key',
+		fetch: async (url) => {
+			calls.push(url);
+			return jsonResponse({ code: 200, data: { batch_id: 'bat_9', status: 'partial_success', succeeded: 1, failed: 1 } });
+		},
+	});
+	const res = await client.poll('omni.getBatchStatus', 'bat_9', { delayMs: 0, maxAttempts: 3 });
+	assert.equal(res.status, 'partial_success');
+	assert.equal(calls[0], 'https://apergrex.ru/franklab/api/make/omni/batches/bat_9');
+});
+
+test('client sets default Volna v4, Seed Audio, xAI, Google STT operations and VariantPack operation', async () => {
+	const sent = [];
+	const client = createFrankLabClient({
+		baseUrl: 'https://apergrex.ru',
+		apiKey: 'test_public_key',
+		fetch: async (url, init) => {
+			sent.push({ url, body: JSON.parse(init.body) });
+			return jsonResponse({ code: 200, data: { taskId: 't_1', status: 'queued' } });
+		},
+	});
+
+	await client.request('volna.textToSpeechV4', { text: 'Hi', voice_id: 'v1' });
+	await client.request('volna.seedAudio', { text_prompt: 'Calm voice' });
+	await client.request('volna.xaiTranscribe', { audio_url: 'https://cdn.example.com/a.mp3' });
+	await client.request('variantPack.create', { videoUrl: 'https://cdn.example.com/v.mp4', copies: 5, variantPreset: 'standard' });
+
+	assert.equal(sent[0].body.operation, 'text-to-speech-v4');
+	assert.equal(sent[1].body.operation, 'seed-audio-1-0');
+	assert.equal(sent[2].body.operation, 'xai-speech-to-text');
+	assert.equal(sent[3].body.operation, 'variant_pack');
+});
+
+

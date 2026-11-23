@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 const { buildPayload } = await import('../dist/nodes/shared/node-utils.js');
+const { FrankLabFlux } = await import('../dist/nodes/Flux/FrankLabFlux.node.js');
 
 function stubContext(params) {
 	return {
@@ -210,4 +211,112 @@ test('hotCoffe createVideo wraps video_url into video_list', () => {
 	assert.equal(payload.video_url, undefined);
 	assert.equal(payload.operation, 'video_edit');
 });
+
+test('omni quoteBatch wraps flat video fields into request object', () => {
+	const payload = buildPayload(
+		stubContext({ count: 2, operationMode: 'text_to_video', model: 'omni_1_2', prompt: 'sunset drone' }),
+		0,
+		'omni',
+		'quoteBatch',
+	);
+	assert.equal(payload.count, 2);
+	assert.deepEqual(payload.request, { operation: 'text_to_video', model: 'omni_1_2', prompt: 'sunset drone' });
+});
+
+test('plastinka applySample maps sampleOperation to operation and preserves sampleId', () => {
+	const payload = buildPayload(
+		stubContext({ videoUrl: 'https://cdn.example.com/v.mp4', sampleOperation: 'replace', sampleId: 'smp_42' }),
+		0,
+		'plastinka',
+		'applySample',
+	);
+	assert.equal(payload.operation, 'replace');
+	assert.equal(payload.sampleId, 'smp_42');
+});
+
+test('social publish allows UUID media and rejects localhost media URLs including trimmed and array values', () => {
+	const ok = buildPayload(
+		stubContext({ platform: 'telegram', media: '11111111-1111-4111-8111-111111111111', caption: 'Hello' }),
+		0,
+		'social',
+		'publish',
+	);
+	assert.equal(ok.media, '11111111-1111-4111-8111-111111111111');
+
+	assert.throws(
+		() => buildPayload(stubContext({ platform: 'telegram', media: 'http://127.0.0.1/secret.mp4', caption: 'No' }), 0, 'social', 'publish'),
+		/Local media URLs are not allowed/,
+	);
+
+	assert.throws(
+		() => buildPayload(stubContext({ platform: 'telegram', media: '  http://127.0.0.1/secret.mp4', caption: 'No' }), 0, 'social', 'publish'),
+		/Local media URLs are not allowed/,
+	);
+
+	assert.throws(
+		() =>
+			buildPayload(
+				stubContext({
+					platform: 'telegram',
+					payloadJson: JSON.stringify({ media: ['https://cdn.example.com/ok.mp4', ' http://127.0.0.1/bad.mp4'] }),
+				}),
+				0,
+				'social',
+				'publish',
+			),
+		/Local media URLs are not allowed/,
+	);
+});
+
+test('flux rejects private/localhost URLs in keyframes with leading whitespace and in startVideo/videoInput UI fields', async () => {
+	assert.throws(
+		() =>
+			buildPayload(
+				stubContext({
+					payloadJson: JSON.stringify({ request: { keyframes: ['  http://127.0.0.1/frame.png'] } }),
+				}),
+				0,
+				'flux',
+				'videoQuote',
+			),
+		/Local media URLs are not allowed/,
+	);
+
+	const fluxNode = new FrankLabFlux();
+	for (const badCase of [
+		{ operation: 'videoQuote', videoMode: 'v2v', startVideo: 'http://127.0.0.1/clip.mp4', expected: /Local media URLs are not allowed/ },
+		{ operation: 'videoQuote', videoMode: 'v2v', startVideo: '  http://127.0.0.1/clip.mp4', expected: /Local media URLs are not allowed/ },
+		{ operation: 'videoQuote', videoMode: 'edit', videoInput: 'http://169.254.169.254/latest/meta-data', expected: /Local media URLs are not allowed/ },
+	]) {
+		let httpCalled = false;
+		const execCtx = {
+			getInputData: () => [{ json: {} }],
+			getCredentials: async () => ({ apiKey: 'fl_test_key', baseUrl: 'https://apergrex.ru' }),
+			getNode: () => ({ name: 'FrankLab FLUX' }),
+			continueOnFail: () => false,
+			getNodeParameter(name, _itemIndex, fallback) {
+				if (Object.prototype.hasOwnProperty.call(badCase, name)) return badCase[name];
+				return fallback;
+			},
+			helpers: {
+				httpRequest: async () => {
+					httpCalled = true;
+					return { statusCode: 200, body: {} };
+				},
+			},
+		};
+		await assert.rejects(() => fluxNode.execute.call(execCtx), badCase.expected);
+		assert.equal(httpCalled, false);
+	}
+});
+
+test('kusok moonOperation defaults backend to moon and heygenAgent maps pageToken to token', () => {
+	const moon = buildPayload(stubContext({ action: 'verify_start' }), 0, 'kusok', 'moonOperation');
+	assert.equal(moon.backend, 'moon');
+	assert.equal(moon.action, 'verify_start');
+
+	const heygen = buildPayload(stubContext({ providerAccountMode: 'franklab', pageToken: 'cursor_2' }), 0, 'heygenAgent', 'listSessions');
+	assert.equal(heygen.token, 'cursor_2');
+});
+
 
