@@ -5,32 +5,43 @@
 			"parameters": {},
 			"type": "n8n-nodes-base.manualTrigger",
 			"typeVersion": 1,
-			"position": [160, 240],
+			"position": [
+				160,
+				240
+			],
 			"id": "trigger-seedance-cover",
 			"name": "Manual Trigger"
 		},
 		{
 			"parameters": {
+				"resource": "hotCoffe",
 				"operation": "generateImage",
 				"prompt": "Editorial studio hero shot of wireless matte-black headphones floating above dark slate, subtle gold rim light",
 				"waitForCompletion": true
 			},
-			"type": "@apergrex/n8n-nodes-franklab.frankLabHotCoffe",
+			"type": "@apergrex/n8n-nodes-franklab.frankLab",
 			"typeVersion": 1,
-			"position": [420, 240],
+			"position": [
+				420,
+				240
+			],
 			"id": "hotcoffee-cover",
 			"name": "FrankLab Hot Coffee (Seedance Image)"
 		},
 		{
 			"parameters": {
+				"resource": "holst",
 				"operation": "submitImage",
 				"imageUrl": "={{$json.imageUrl || $json.downloadUrl}}",
 				"operationName": "info",
 				"waitForCompletion": true
 			},
-			"type": "@apergrex/n8n-nodes-franklab.frankLabHolst",
+			"type": "@apergrex/n8n-nodes-franklab.frankLab",
 			"typeVersion": 1,
-			"position": [700, 240],
+			"position": [
+				700,
+				240
+			],
 			"id": "holst-inspect",
 			"name": "FrankLab HOLST (Inspect Asset)"
 		}

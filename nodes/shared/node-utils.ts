@@ -1,7 +1,7 @@
 import type { IExecuteFunctions, INodeExecutionData, INodeProperties, JsonObject } from 'n8n-workflow';
-import { NodeOperationError } from 'n8n-workflow';
-import { createFrankLabClient } from './client';
-import type { FetchResponse } from './client';
+import { NodeApiError, NodeOperationError } from 'n8n-workflow';
+import { createFrankLabClient, FrankLabHttpError } from './client';
+import type { FetchResponse, FrankLabClient } from './client';
 import { keyFor } from './registry';
 import type { FrankLabModule } from './registry';
 import { validatePublicMediaUrl, validatePublicMediaUrlsInPayload } from './url';
@@ -66,6 +66,7 @@ export const profileIdProperty: INodeProperties = {
 	required: true,
 	displayOptions: {
 		show: {
+			resource: ['c2pa'],
 			operation: ['revokeProfile'],
 		},
 	},
@@ -252,6 +253,66 @@ export async function createN8nFrankLabClient(context: IExecuteFunctions) {
 	});
 }
 
+export function scopePropertiesToResource(moduleName: FrankLabModule, properties: INodeProperties[]): INodeProperties[] {
+	return properties.map((property) => {
+		const existingShow = property.displayOptions?.show ?? {};
+		const nextDisplayOptions = {
+			...(property.displayOptions ?? {}),
+			show: {
+				...existingShow,
+				resource: [moduleName],
+			},
+		};
+		return {
+			...property,
+			displayOptions: nextDisplayOptions,
+		};
+	});
+}
+
+export function createNodeApiError(context: IExecuteFunctions, error: unknown, itemIndex: number): NodeApiError | NodeOperationError {
+	if (error instanceof NodeApiError || error instanceof NodeOperationError) {
+		return error;
+	}
+	if (error instanceof FrankLabHttpError) {
+		return new NodeApiError(context.getNode(), error.toJsonObject() as JsonObject, {
+			itemIndex,
+			httpCode: error.httpCode,
+			message: error.message,
+		});
+	}
+	const payload =
+		error instanceof Error
+			? ({ message: error.message, name: error.name } as JsonObject)
+			: ({ message: String(error) } as JsonObject);
+	return new NodeApiError(context.getNode(), payload, {
+		itemIndex,
+		message: error instanceof Error ? error.message : String(error),
+	});
+}
+
+export async function executeFrankLabItem(
+	context: IExecuteFunctions,
+	client: FrankLabClient,
+	itemIndex: number,
+	moduleName: FrankLabModule,
+	operation: string,
+	statusOperation: string | Record<string, string>,
+): Promise<Record<string, unknown>> {
+	const payload = buildPayload(context, itemIndex, moduleName, operation);
+	const result = await client.request(keyFor(moduleName, operation), payload);
+	// The wait toggle is hidden for NO_POLL/READ_ONLY operations, but workflows can
+	// still carry waitForCompletion=true (imported JSON, API) — enforce it here so
+	// those operations never poll a status endpoint from the wrong family.
+	const shouldPoll =
+		(context.getNodeParameter('waitForCompletion', itemIndex, false) as boolean) &&
+		!NO_POLL_OPERATIONS.includes(operation) &&
+		!READ_ONLY_OPERATIONS.includes(operation);
+	const taskId = typeof result.taskId === 'string' ? result.taskId : '';
+	const pollOperation = resolveStatusOperation(statusOperation, operation);
+	return shouldPoll && taskId && pollOperation ? await client.poll(keyFor(moduleName, pollOperation), taskId) : result;
+}
+
 export async function executeFrankLabModule(
 	context: IExecuteFunctions,
 	moduleName: FrankLabModule,
@@ -265,25 +326,14 @@ export async function executeFrankLabModule(
 	for (let itemIndex = 0; itemIndex < items.length; itemIndex += 1) {
 		try {
 			const operation = context.getNodeParameter('operation', itemIndex) as string;
-			const payload = buildPayload(context, itemIndex, moduleName, operation);
-			const result = await client.request(keyFor(moduleName, operation), payload);
-			// The wait toggle is hidden for NO_POLL/READ_ONLY operations, but workflows can
-			// still carry waitForCompletion=true (imported JSON, API) — enforce it here so
-			// those operations never poll a status endpoint from the wrong family.
-			const shouldPoll =
-				(context.getNodeParameter('waitForCompletion', itemIndex, false) as boolean) &&
-				!NO_POLL_OPERATIONS.includes(operation) &&
-				!READ_ONLY_OPERATIONS.includes(operation);
-			const taskId = typeof result.taskId === 'string' ? result.taskId : '';
-			const pollOperation = resolveStatusOperation(statusOperation, operation);
-			const finalResult = shouldPoll && taskId && pollOperation ? await client.poll(keyFor(moduleName, pollOperation), taskId) : result;
+			const finalResult = await executeFrankLabItem(context, client, itemIndex, moduleName, operation, statusOperation);
 			output.push({ json: finalResult as JsonObject, pairedItem: itemIndex });
 		} catch (error) {
 			if (context.continueOnFail()) {
 				output.push({ json: { error: error instanceof Error ? error.message : String(error) }, pairedItem: itemIndex });
 				continue;
 			}
-			throw new NodeOperationError(context.getNode(), error as Error, { itemIndex });
+			throw createNodeApiError(context, error, itemIndex);
 		}
 	}
 
@@ -719,9 +769,14 @@ function responseFromHttpResult(rawResponse: unknown): FetchResponse {
 		'body' in rawResponse;
 	const status = isFull ? Number((rawResponse as { statusCode: number }).statusCode) : 200;
 	const body = isFull ? (rawResponse as { body: unknown }).body : rawResponse;
+	const headers =
+		isFull && 'headers' in rawResponse && typeof (rawResponse as { headers?: unknown }).headers === 'object' && (rawResponse as { headers?: unknown }).headers !== null
+			? ((rawResponse as { headers: Record<string, unknown> }).headers)
+			: undefined;
 	return {
 		ok: status >= 200 && status < 300,
 		status,
+		headers,
 		async json() {
 			return body;
 		},

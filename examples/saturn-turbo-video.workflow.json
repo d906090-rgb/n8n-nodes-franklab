@@ -3,15 +3,19 @@
 	"nodes": [
 		{
 			"parameters": {
+				"resource": "saturn",
 				"operation": "turboTextToVideo",
 				"prompt": "Product on a rotating pedestal, studio lighting, subtle lens flare",
 				"aspect_ratio": "16:9",
 				"resolution": "1080p",
 				"waitForCompletion": true
 			},
-			"type": "@apergrex/n8n-nodes-franklab.frankLabSaturn",
+			"type": "@apergrex/n8n-nodes-franklab.frankLab",
 			"typeVersion": 1,
-			"position": [400, 240],
+			"position": [
+				400,
+				240
+			],
 			"id": "franklab-saturn-turbo-video",
 			"name": "FrankLab SATURN"
 		}

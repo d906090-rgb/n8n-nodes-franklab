@@ -25,38 +25,9 @@ test('package metadata is eligible for n8n community verification', () => {
 	assert.equal(packageJson.scripts.pretest, 'npm run build');
 	assert.deepEqual(packageJson.n8n.credentials, ['dist/credentials/FrankLabApi.credentials.js']);
 	assert.deepEqual(packageJson.n8n.nodes, [
-		'dist/nodes/Alibaba/FrankLabAlibaba.node.js',
-		'dist/nodes/Aries/FrankLabAries.node.js',
-		'dist/nodes/C2pa/FrankLabC2pa.node.js',
-		'dist/nodes/Dola/FrankLabDola.node.js',
-		'dist/nodes/Flux/FrankLabFlux.node.js',
-		'dist/nodes/HeyGenAgent/FrankLabHeyGenAgent.node.js',
-		'dist/nodes/Holst/FrankLabHolst.node.js',
-		'dist/nodes/HotCoffe/FrankLabHotCoffe.node.js',
-		'dist/nodes/Jupiter/FrankLabJupiter.node.js',
-		'dist/nodes/Kley/FrankLabKley.node.js',
-		'dist/nodes/Kusok/FrankLabKusok.node.js',
-		'dist/nodes/Mars/FrankLabMars.node.js',
-		'dist/nodes/Mercury/FrankLabMercury.node.js',
-		'dist/nodes/Minimax/FrankLabMinimax.node.js',
-		'dist/nodes/Moon/FrankLabMoon.node.js',
-		'dist/nodes/Narezka/FrankLabNarezka.node.js',
-		'dist/nodes/Neptune/FrankLabNeptune.node.js',
-		'dist/nodes/Omni/FrankLabOmni.node.js',
-		'dist/nodes/Orkestr/FrankLabOrkestr.node.js',
-		'dist/nodes/Plastinka/FrankLabPlastinka.node.js',
-		'dist/nodes/Pluto/FrankLabPluto.node.js',
-		'dist/nodes/Saturn/FrankLabSaturn.node.js',
-		'dist/nodes/Social/FrankLabSocial.node.js',
-		'dist/nodes/Sufler/FrankLabSufler.node.js',
-		'dist/nodes/TextSticker/FrankLabTextSticker.node.js',
-		'dist/nodes/Titan/FrankLabTitan.node.js',
-		'dist/nodes/VariantPack/FrankLabVariantPack.node.js',
-		'dist/nodes/Venus/FrankLabVenus.node.js',
-		'dist/nodes/Volna/FrankLabVolna.node.js',
-		'dist/nodes/X/FrankLabX.node.js',
+		'dist/nodes/FrankLab/FrankLab.node.js',
 	]);
-	assert.equal(packageJson.version, '0.3.1');
+	assert.equal(packageJson.version, '0.4.0');
 	// Monorepo tree keeps the host-lock wrapper; the public-mirror export rewrites
 	// scripts.test to the standalone form, so both are valid depending on environment.
 	assert.ok(

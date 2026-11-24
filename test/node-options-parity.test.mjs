@@ -2,82 +2,65 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 const registry = await import('../dist/nodes/shared/registry.js');
+const { FrankLab } = await import('../dist/nodes/FrankLab/FrankLab.node.js');
 
-const NODE_MODULES = [
-	['Holst', 'holst'],
-	['Kley', 'kley'],
-	['Plastinka', 'plastinka'],
-	['Volna', 'volna'],
-	['C2pa', 'c2pa'],
-	['Sufler', 'sufler'],
-	['TextSticker', 'textSticker'],
-	['Orkestr', 'orkestr'],
-	['Jupiter', 'jupiter'],
-	['Mars', 'mars'],
-	['Saturn', 'saturn'],
-	['Moon', 'moon'],
-	['Venus', 'venus'],
-	['X', 'x'],
-	['Minimax', 'minimax'],
-	['Dola', 'dola'],
-	['Alibaba', 'alibaba'],
-	['Omni', 'omni'],
-	['Kusok', 'kusok'],
-	['Mercury', 'mercury'],
-	['Neptune', 'neptune'],
-	['Pluto', 'pluto'],
-	['Aries', 'aries'],
-	['Titan', 'titan'],
-	['HotCoffe', 'hotCoffe'],
-	['Social', 'social'],
-	['Flux', 'flux'],
-	['Narezka', 'narezka'],
-	['VariantPack', 'variantPack'],
-	['HeyGenAgent', 'heygenAgent'],
-];
+const description = new FrankLab().description;
 
-test('every node operation dropdown exactly matches its registry module operations', async () => {
-	for (const [dir, moduleName] of NODE_MODULES) {
-		const nodeModule = await import(`../dist/nodes/${dir}/FrankLab${dir}.node.js`);
-		const nodeClass = Object.values(nodeModule).find((value) => typeof value === 'function');
-		assert.ok(nodeClass, `${dir} node class is exported`);
-		const description = new nodeClass().description;
-		const optionValues = new Set();
-		for (const property of description.properties) {
-			if (property.name === 'operation' && Array.isArray(property.options)) {
-				for (const option of property.options) optionValues.add(option.value);
-			}
-		}
-		const registryValues = new Set(registry.MODULE_OPERATIONS[moduleName]);
-		assert.ok(registryValues.size > 0, `${moduleName} has registry operations`);
+test('unified FrankLab node exposes every registry module as a top-level resource', () => {
+	const resourceProp = description.properties.find((property) => property.name === 'resource');
+	assert.ok(resourceProp && Array.isArray(resourceProp.options), 'FrankLab has top-level resource options');
+	const resourceValues = resourceProp.options.map((option) => option.value).sort();
+	const registryModules = Object.keys(registry.MODULE_OPERATIONS).sort();
+	assert.deepEqual(resourceValues, registryModules, 'resource dropdown must equal registry MODULE_OPERATIONS keys');
+	assert.equal(resourceValues.length, 30);
+});
+
+test('every resource operation dropdown exactly matches its registry module operations', () => {
+	const opsByResource = new Map();
+	for (const property of description.properties) {
+		if (property.name !== 'operation' || !Array.isArray(property.options)) continue;
+		const shownResources = property.displayOptions?.show?.resource;
+		assert.ok(Array.isArray(shownResources) && shownResources.length === 1, 'each operation property scopes to one resource');
+		const resourceName = shownResources[0];
+		const allowed = new Set(registry.MODULE_OPERATIONS[resourceName] ?? []);
+		assert.ok(
+			allowed.has(property.default),
+			`resource '${resourceName}' default operation '${property.default}' must exist in registry`,
+		);
+		const bucket = opsByResource.get(resourceName) ?? new Set();
+		for (const option of property.options) bucket.add(option.value);
+		opsByResource.set(resourceName, bucket);
+	}
+
+	for (const [moduleName, registryOps] of Object.entries(registry.MODULE_OPERATIONS)) {
+		const optionValues = opsByResource.get(moduleName);
+		assert.ok(optionValues, `missing operation dropdown for resource '${moduleName}'`);
 		assert.deepEqual(
 			[...optionValues].sort(),
-			[...registryValues].sort(),
-			`${dir} node dropdown must equal registry MODULE_OPERATIONS.${moduleName}`,
+			[...registryOps].sort(),
+			`FrankLab resource '${moduleName}' operations must equal registry MODULE_OPERATIONS.${moduleName}`,
 		);
-		assert.ok(optionValues.size > 0, `${dir} node has a non-empty operation list`);
 	}
 });
 
-test('every node field displayOptions reference only real operation values', async () => {
-	// Shared properties (jobId/wait/payload/profileId) are declared once for all nodes,
-	// so their show-lists legitimately name operations other nodes use.
-	const sharedPropertyNames = new Set(['jobId', 'waitForCompletion', 'payloadJson', 'profileId']);
-	for (const [dir, moduleName] of NODE_MODULES) {
-		const nodeModule = await import(`../dist/nodes/${dir}/FrankLab${dir}.node.js`);
-		const nodeClass = Object.values(nodeModule).find((value) => typeof value === 'function');
-		const description = new nodeClass().description;
-		const allowed = new Set(registry.MODULE_OPERATIONS[moduleName]);
-		for (const property of description.properties) {
-			if (sharedPropertyNames.has(property.name)) continue;
-			const shownOperations = property.displayOptions?.show?.operation;
-			if (!Array.isArray(shownOperations)) continue;
-			for (const shown of shownOperations) {
-				assert.ok(
-					allowed.has(shown),
-					`${dir} field '${property.name}' shows for unknown operation '${shown}'`,
-				);
-			}
+test('every resource-scoped field displayOptions reference only real operation values of its resource', () => {
+	const sharedPropertyNames = new Set(['resource', 'operation', 'jobId', 'waitForCompletion', 'payloadJson', 'profileId']);
+	for (const property of description.properties) {
+		if (sharedPropertyNames.has(property.name)) continue;
+		const shownResources = property.displayOptions?.show?.resource;
+		assert.ok(
+			Array.isArray(shownResources) && shownResources.length === 1,
+			`field '${property.name}' must be scoped to a single resource to avoid UI collisions`,
+		);
+		const moduleName = shownResources[0];
+		const allowed = new Set(registry.MODULE_OPERATIONS[moduleName] ?? []);
+		const shownOperations = property.displayOptions?.show?.operation;
+		if (!Array.isArray(shownOperations)) continue;
+		for (const shown of shownOperations) {
+			assert.ok(
+				allowed.has(shown),
+				`resource '${moduleName}' field '${property.name}' shows for unknown operation '${shown}'`,
+			);
 		}
 	}
 });

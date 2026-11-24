@@ -5,33 +5,44 @@
 			"parameters": {},
 			"type": "n8n-nodes-base.manualTrigger",
 			"typeVersion": 1,
-			"position": [140, 240],
+			"position": [
+				140,
+				240
+			],
 			"id": "trigger-voice-video",
 			"name": "Manual Trigger"
 		},
 		{
 			"parameters": {
+				"resource": "volna",
 				"operation": "textToSpeech",
 				"text": "Автоматизируйте выпуск видеороликов через единый медиа-API в рублях.",
 				"waitForCompletion": true
 			},
-			"type": "@apergrex/n8n-nodes-franklab.frankLabVolna",
+			"type": "@apergrex/n8n-nodes-franklab.frankLab",
 			"typeVersion": 1,
-			"position": [380, 140],
+			"position": [
+				380,
+				140
+			],
 			"id": "volna-tts",
 			"name": "FrankLab VOLNA (Voiceover)"
 		},
 		{
 			"parameters": {
+				"resource": "saturn",
 				"operation": "turboTextToVideo",
 				"prompt": "Modern creative agency studio desk with timeline monitors and warm tungsten light, smooth dolly push-in",
 				"aspect_ratio": "9:16",
 				"resolution": "720p",
 				"waitForCompletion": true
 			},
-			"type": "@apergrex/n8n-nodes-franklab.frankLabSaturn",
+			"type": "@apergrex/n8n-nodes-franklab.frankLab",
 			"typeVersion": 1,
-			"position": [380, 340],
+			"position": [
+				380,
+				340
+			],
 			"id": "saturn-video",
 			"name": "FrankLab SATURN (Video)"
 		},
@@ -43,20 +54,27 @@
 			},
 			"type": "n8n-nodes-base.merge",
 			"typeVersion": 3,
-			"position": [640, 240],
+			"position": [
+				640,
+				240
+			],
 			"id": "merge-av-branches",
 			"name": "Merge Audio & Video"
 		},
 		{
 			"parameters": {
+				"resource": "kley",
 				"operation": "overlay",
 				"videoUrl": "={{$('FrankLab SATURN (Video)').item.json.videoUrl || $('FrankLab SATURN (Video)').item.json.downloadUrl}}",
 				"payloadJson": "={\"audioUrl\":\"{{$('FrankLab VOLNA (Voiceover)').item.json.audioUrl || $('FrankLab VOLNA (Voiceover)').item.json.downloadUrl}}\"}",
 				"waitForCompletion": true
 			},
-			"type": "@apergrex/n8n-nodes-franklab.frankLabKley",
+			"type": "@apergrex/n8n-nodes-franklab.frankLab",
 			"typeVersion": 1,
-			"position": [900, 240],
+			"position": [
+				900,
+				240
+			],
 			"id": "kley-merge-av",
 			"name": "FrankLab KLEY (Overlay Audio)"
 		}
