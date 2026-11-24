@@ -1,8 +1,12 @@
 import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
 import { test } from 'node:test';
 
+const require = createRequire(import.meta.url);
+const { NodeApiError } = require('n8n-workflow');
+
 const { buildPayload } = await import('../dist/nodes/shared/node-utils.js');
-const { FrankLabFlux } = await import('../dist/nodes/Flux/FrankLabFlux.node.js');
+const { FrankLab } = await import('../dist/nodes/FrankLab/FrankLab.node.js');
 
 function stubContext(params) {
 	return {
@@ -282,17 +286,17 @@ test('flux rejects private/localhost URLs in keyframes with leading whitespace a
 		/Local media URLs are not allowed/,
 	);
 
-	const fluxNode = new FrankLabFlux();
+	const frankLabNode = new FrankLab();
 	for (const badCase of [
-		{ operation: 'videoQuote', videoMode: 'v2v', startVideo: 'http://127.0.0.1/clip.mp4', expected: /Local media URLs are not allowed/ },
-		{ operation: 'videoQuote', videoMode: 'v2v', startVideo: '  http://127.0.0.1/clip.mp4', expected: /Local media URLs are not allowed/ },
-		{ operation: 'videoQuote', videoMode: 'edit', videoInput: 'http://169.254.169.254/latest/meta-data', expected: /Local media URLs are not allowed/ },
+		{ resource: 'flux', operation: 'videoQuote', videoMode: 'v2v', startVideo: 'http://127.0.0.1/clip.mp4', expected: /Local media URLs are not allowed/ },
+		{ resource: 'flux', operation: 'videoQuote', videoMode: 'v2v', startVideo: '  http://127.0.0.1/clip.mp4', expected: /Local media URLs are not allowed/ },
+		{ resource: 'flux', operation: 'videoQuote', videoMode: 'edit', videoInput: 'http://169.254.169.254/latest/meta-data', expected: /Local media URLs are not allowed/ },
 	]) {
 		let httpCalled = false;
 		const execCtx = {
 			getInputData: () => [{ json: {} }],
 			getCredentials: async () => ({ apiKey: 'fl_test_key', baseUrl: 'https://apergrex.ru' }),
-			getNode: () => ({ name: 'FrankLab FLUX' }),
+			getNode: () => ({ name: 'FrankLab' }),
 			continueOnFail: () => false,
 			getNodeParameter(name, _itemIndex, fallback) {
 				if (Object.prototype.hasOwnProperty.call(badCase, name)) return badCase[name];
@@ -305,9 +309,42 @@ test('flux rejects private/localhost URLs in keyframes with leading whitespace a
 				},
 			},
 		};
-		await assert.rejects(() => fluxNode.execute.call(execCtx), badCase.expected);
+		await assert.rejects(() => frankLabNode.execute.call(execCtx), badCase.expected);
 		assert.equal(httpCalled, false);
 	}
+});
+
+test('unified FrankLab node wraps HTTP errors in NodeApiError with status code, body, and headers', async () => {
+	const frankLabNode = new FrankLab();
+	const execCtx = {
+		getInputData: () => [{ json: {} }],
+		getCredentials: async () => ({ apiKey: 'fl_test_key', baseUrl: 'https://apergrex.ru' }),
+		getNode: () => ({ name: 'FrankLab', type: '@apergrex/n8n-nodes-franklab.frankLab' }),
+		continueOnFail: () => false,
+		getNodeParameter(name, _itemIndex, fallback) {
+			if (name === 'resource') return 'holst';
+			if (name === 'operation') return 'submitImage';
+			if (name === 'imageUrl') return 'https://cdn.example.com/pic.png';
+			return fallback;
+		},
+		helpers: {
+			httpRequest: async () => ({
+				statusCode: 422,
+				headers: { 'x-request-id': 'req_422_test' },
+				body: { error: 'Unsupported image format' },
+			}),
+		},
+	};
+
+	await assert.rejects(
+		() => frankLabNode.execute.call(execCtx),
+		(error) => {
+			assert.ok(error instanceof NodeApiError, 'HTTP error must be wrapped in NodeApiError');
+			assert.equal(error.httpCode, '422');
+			assert.match(error.message, /Unsupported image format/);
+			return true;
+		},
+	);
 });
 
 test('kusok moonOperation defaults backend to moon and heygenAgent maps pageToken to token', () => {

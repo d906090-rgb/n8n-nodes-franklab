@@ -1,0 +1,516 @@
+import type { FrankLabResourceDefinition } from './types';
+
+export const jupiterResource: FrankLabResourceDefinition = {
+	moduleName: 'jupiter',
+	displayName: 'JUPITER',
+	statusOperation: {
+	default: "getOmniStatus",
+	seedreamImage: "getSeedreamStatus",
+	recraftImage: "getRecraftStatus",
+	geminiImage: "getGeminiStatus",
+	gptImageCodex: "getGptImageCodexStatus",
+	youchuanImage: "getYouchuanImageStatus",
+	youchuanVideo: "getYouchuanVideoStatus"
+},
+	operationProperty: {
+		displayName: 'Operation',
+		name: 'operation',
+		type: 'options',
+		noDataExpression: true,
+		default: 'omniImage',
+		displayOptions: { show: { resource: ['jupiter'] } },
+		options: [
+	{
+		name: "Generate Image (GPT Image 2 / Codex)",
+		value: "gptImageCodex",
+		action: "Generate an image with gpt image 2 codex"
+	},
+	{
+		name: "Generate Image (Midjourney / Youchuan)",
+		value: "youchuanImage",
+		action: "Run a midjourney image operation"
+	},
+	{
+		name: "Generate Image (Nano Banana / Gemini)",
+		value: "geminiImage",
+		action: "Generate an image with nano banana google gemini"
+	},
+	{
+		name: "Generate Image (Omni)",
+		value: "omniImage",
+		action: "Generate an image with omni image"
+	},
+	{
+		name: "Generate Image (Recraft)",
+		value: "recraftImage",
+		action: "Create a recraft task"
+	},
+	{
+		name: "Generate Image (Seedream)",
+		value: "seedreamImage",
+		action: "Generate an image with seedream"
+	},
+	{
+		name: "Generate Video (Midjourney / Youchuan)",
+		value: "youchuanVideo",
+		action: "Generate a midjourney video"
+	},
+	{
+		name: "Get GPT Image 2 Status",
+		value: "getGptImageCodexStatus",
+		action: "Get a gpt image 2 codex task status"
+	},
+	{
+		name: "Get Midjourney Image Status",
+		value: "getYouchuanImageStatus",
+		action: "Get a midjourney image task status"
+	},
+	{
+		name: "Get Midjourney Video Status",
+		value: "getYouchuanVideoStatus",
+		action: "Get a midjourney video task status"
+	},
+	{
+		name: "Get Nano Banana Status",
+		value: "getGeminiStatus",
+		action: "Get a nano banana gemini task status"
+	},
+	{
+		name: "Get Omni Image Status",
+		value: "getOmniStatus",
+		action: "Get an omni image task status"
+	},
+	{
+		name: "Get Recraft Status",
+		value: "getRecraftStatus",
+		action: "Get a recraft task status"
+	},
+	{
+		name: "Get Seedream Image Status",
+		value: "getSeedreamStatus",
+		action: "Get a seedream task status"
+	}
+		],
+	},
+	fields: [
+	{
+		displayName: "Prompt",
+		name: "prompt",
+		type: "string",
+		typeOptions: {
+			rows: 4
+		},
+		default: "",
+		required: true,
+		displayOptions: {
+			show: {
+				operation: [
+					"omniImage",
+					"seedreamImage",
+					"geminiImage",
+					"gptImageCodex"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Prompt (Optional for Some Operations)",
+		name: "prompt",
+		type: "string",
+		typeOptions: {
+			rows: 3
+		},
+		default: "",
+		displayOptions: {
+			show: {
+				operation: [
+					"youchuanImage",
+					"youchuanVideo"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Gemini Model",
+		name: "model_id",
+		type: "options",
+		noDataExpression: true,
+		default: "gemini-3.1-flash-image",
+		options: [
+			{
+				name: "Gemini 2.5 Flash Image",
+				value: "gemini-2.5-flash-image",
+				action: "Use Gemini 2.5 Flash Image"
+			},
+			{
+				name: "Gemini 3 Pro Image (Nano Banana Pro)",
+				value: "gemini-3-pro-image",
+				action: "Use Gemini 3 Pro Image"
+			},
+			{
+				name: "Gemini 3.1 Flash Image (Nano Banana 2)",
+				value: "gemini-3.1-flash-image",
+				action: "Use Gemini 3.1 Flash Image"
+			},
+			{
+				name: "Gemini 3.1 Flash Lite Image (Nano Banana 2 Lite)",
+				value: "gemini-3.1-flash-lite-image",
+				action: "Use Gemini 3.1 Flash Lite Image"
+			},
+			{
+				name: "Nano Banana 2.1",
+				value: "gemini-nano-banana-2.1",
+				action: "Use Nano Banana 2.1"
+			}
+		],
+		displayOptions: {
+			show: {
+				operation: [
+					"geminiImage"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Image Size",
+		name: "image_size",
+		type: "options",
+		noDataExpression: true,
+		default: "1K",
+		options: [
+			{
+				name: "0.5K",
+				value: "0.5K",
+				action: "Render at 0.5K"
+			},
+			{
+				name: "1K",
+				value: "1K",
+				action: "Render at 1K"
+			},
+			{
+				name: "2K",
+				value: "2K",
+				action: "Render at 2K"
+			},
+			{
+				name: "4K",
+				value: "4K",
+				action: "Render at 4K"
+			}
+		],
+		displayOptions: {
+			show: {
+				operation: [
+					"geminiImage"
+				]
+			}
+		}
+	},
+	{
+		displayName: "GPT Image Model",
+		name: "model",
+		type: "options",
+		noDataExpression: true,
+		default: "gpt-image-2",
+		options: [
+			{
+				name: "GPT Image 2",
+				value: "gpt-image-2",
+				action: "Use GPT Image 2"
+			},
+			{
+				name: "GPT Image 2.5 Flare",
+				value: "gpt-image-2.5-flare",
+				action: "Use GPT Image 2.5 Flare"
+			},
+			{
+				name: "GPT Image 2.5 Sunburst",
+				value: "gpt-image-2.5-sunburst",
+				action: "Use GPT Image 2.5 Sunburst"
+			}
+		],
+		displayOptions: {
+			show: {
+				operation: [
+					"gptImageCodex"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Midjourney Image Operation",
+		name: "operationMode",
+		type: "options",
+		noDataExpression: true,
+		default: "imagine",
+		options: [
+			{
+				name: "Blend",
+				value: "blend",
+				action: "Blend images"
+			},
+			{
+				name: "Describe",
+				value: "describe",
+				action: "Describe an image"
+			},
+			{
+				name: "Imagine",
+				value: "imagine",
+				action: "Generate image from prompt"
+			},
+			{
+				name: "Inpaint",
+				value: "inpaint",
+				action: "Inpaint image region"
+			},
+			{
+				name: "Outpaint",
+				value: "outpaint",
+				action: "Outpaint image"
+			},
+			{
+				name: "Pan",
+				value: "pan",
+				action: "Pan image"
+			},
+			{
+				name: "Reroll",
+				value: "reroll",
+				action: "Reroll previous generation"
+			},
+			{
+				name: "Shorten",
+				value: "shorten",
+				action: "Shorten prompt"
+			},
+			{
+				name: "Upscale",
+				value: "upscale",
+				action: "Upscale image"
+			},
+			{
+				name: "Variation",
+				value: "variation",
+				action: "Create variation"
+			},
+			{
+				name: "Zoom",
+				value: "zoom",
+				action: "Zoom out image"
+			}
+		],
+		displayOptions: {
+			show: {
+				operation: [
+					"youchuanImage"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Midjourney Video Operation",
+		name: "operationMode",
+		type: "options",
+		noDataExpression: true,
+		default: "video",
+		options: [
+			{
+				name: "Video",
+				value: "video",
+				action: "Generate Midjourney video"
+			},
+			{
+				name: "Video Extend",
+				value: "video_extend",
+				action: "Extend Midjourney video"
+			},
+			{
+				name: "Video Upscale",
+				value: "video_upscale",
+				action: "Upscale Midjourney video"
+			}
+		],
+		displayOptions: {
+			show: {
+				operation: [
+					"youchuanVideo"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Midjourney Version",
+		name: "version",
+		type: "options",
+		noDataExpression: true,
+		default: "7",
+		options: [
+			{
+				name: "6.1",
+				value: "6.1",
+				action: "Use Midjourney 6.1"
+			},
+			{
+				name: "7",
+				value: "7",
+				action: "Use Midjourney 7"
+			},
+			{
+				name: "8.1",
+				value: "8.1",
+				action: "Use Midjourney 8.1"
+			},
+			{
+				name: "8.2",
+				value: "8.2",
+				action: "Use Midjourney 8.2"
+			},
+			{
+				name: "Niji 7",
+				value: "niji-7",
+				action: "Use Niji 7"
+			}
+		],
+		displayOptions: {
+			show: {
+				operation: [
+					"youchuanImage"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Parent Task ID",
+		name: "parent_task_id",
+		type: "string",
+		default: "",
+		displayOptions: {
+			show: {
+				operation: [
+					"youchuanImage",
+					"youchuanVideo"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Aspect Ratio",
+		name: "aspect_ratio",
+		type: "string",
+		default: "",
+		description: "Optional aspect ratio, for example 16:9",
+		displayOptions: {
+			show: {
+				operation: [
+					"omniImage",
+					"geminiImage",
+					"gptImageCodex",
+					"youchuanImage"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Resolution",
+		name: "resolution",
+		type: "string",
+		default: "",
+		description: "Optional resolution preset",
+		displayOptions: {
+			show: {
+				operation: [
+					"omniImage"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Quality",
+		name: "quality",
+		type: "string",
+		default: "",
+		description: "Optional quality preset (e.g. low, medium, high)",
+		displayOptions: {
+			show: {
+				operation: [
+					"omniImage",
+					"gptImageCodex"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Number of Images",
+		name: "n",
+		type: "number",
+		default: 1,
+		displayOptions: {
+			show: {
+				operation: [
+					"omniImage"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Size",
+		name: "size",
+		type: "string",
+		default: "",
+		description: "Optional explicit size for seedream images",
+		displayOptions: {
+			show: {
+				operation: [
+					"seedreamImage"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Model",
+		name: "model",
+		type: "string",
+		default: "",
+		description: "Optional seedream model ID",
+		displayOptions: {
+			show: {
+				operation: [
+					"seedreamImage"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Recraft Model",
+		name: "recraftModel",
+		type: "string",
+		default: "",
+		required: true,
+		description: "Recraft model slug, for example recraft/remove-background",
+		displayOptions: {
+			show: {
+				operation: [
+					"recraftImage"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Image URL",
+		name: "image",
+		type: "string",
+		default: "",
+		required: true,
+		description: "Public http(s) image sent as the Recraft task input",
+		displayOptions: {
+			show: {
+				operation: [
+					"recraftImage"
+				]
+			}
+		}
+	}
+],
+};

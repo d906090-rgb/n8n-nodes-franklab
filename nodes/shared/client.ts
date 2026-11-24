@@ -15,8 +15,46 @@ export interface FetchRequest {
 export interface FetchResponse {
 	ok: boolean;
 	status: number;
+	headers?: Record<string, unknown>;
 	json(): Promise<unknown>;
 	text(): Promise<string>;
+}
+
+export class FrankLabHttpError extends Error {
+	readonly statusCode: number;
+
+	readonly httpCode: string;
+
+	readonly body: unknown;
+
+	readonly headers?: Record<string, unknown>;
+
+	readonly response: { statusCode: number; body: unknown; headers?: Record<string, unknown> };
+
+	constructor(message: string, statusCode: number, body: unknown, headers?: Record<string, unknown>) {
+		super(message);
+		this.name = 'FrankLabHttpError';
+		this.statusCode = statusCode;
+		this.httpCode = String(statusCode);
+		this.body = body;
+		this.headers = headers;
+		this.response = { statusCode, body, headers };
+	}
+
+	toJsonObject(): Record<string, unknown> {
+		return {
+			message: this.message,
+			statusCode: this.statusCode,
+			httpCode: this.httpCode,
+			response: {
+				status: this.statusCode,
+				statusCode: this.statusCode,
+				data: this.body,
+				body: this.body,
+				...(this.headers ? { headers: this.headers } : {}),
+			},
+		};
+	}
 }
 
 export type FetchTransport = (url: string, init: FetchRequest) => Promise<FetchResponse>;
@@ -158,10 +196,10 @@ async function requestEndpoint(
 	const body = await readResponseBody(response);
 	const statusAllowed = response.ok || (endpoint.allowHttpStatuses?.includes(response.status) ?? false);
 	if (!statusAllowed) {
-		throw new Error(extractErrorMessage(body, response.status));
+		throw new FrankLabHttpError(extractErrorMessage(body, response.status), response.status, body, response.headers);
 	}
 	if (endpoint.checkCodeEnvelopeError && isRecord(body) && typeof body.code === 'number' && body.code !== 200) {
-		throw new Error(extractErrorMessage(body, body.code));
+		throw new FrankLabHttpError(extractErrorMessage(body, body.code), body.code, body, response.headers);
 	}
 
 	return extractOutput(endpoint, body, input);
@@ -315,7 +353,7 @@ function extractErrorMessage(body: unknown, status: number): string {
 	if (isRecord(body)) {
 		const data = isRecord(body.data) ? body.data : {};
 		const result = isRecord(data.result) ? data.result : {};
-		const message = result.task_status_msg ?? result.error ?? data.error ?? body.msg ?? body.message;
+		const message = result.task_status_msg ?? result.error ?? data.error ?? body.msg ?? body.message ?? body.error;
 		if (typeof message === 'string' && message.trim()) return message;
 	}
 	return `FrankLab request failed with HTTP ${status}`;

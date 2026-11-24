@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0 (2026-11-23)
+
+n8n Verified Community Node review compliance (single regular action node + `NodeApiError`):
+
+- **Single unified `FrankLab` action node (`@apergrex/n8n-nodes-franklab.frankLab`)**: consolidated all 30 regular module nodes into one `FrankLab` node where every module (`Alibaba`, `Aries`, `C2PA`, `DOLA`, `FLUX`, `HeyGen Agent`, `HOLST`, `Hot Coffee`, `JUPITER`, `KLEY`, `KUSOK`, `MARS`, `MERCURY`, `MiniMax`, `MOON`, `Narezka`, `NEPTUNE`, `OMNI`, `ORKESTR`, `PLASTINKA`, `PLUTO`, `SATURN`, `Social`, `SUFLER`, `TextSticker`, `TITAN`, `VariantPack`, `VENUS`, `VOLNA`, `X`) is a top-level `Resource` with its operations and scoped fields underneath. Satisfies n8n's "one regular node per verified package" guideline.
+- **`NodeApiError` for HTTP/API errors**: replaced `NodeOperationError` re-throws on HTTP failures with `NodeApiError` backed by structured `FrankLabHttpError`, preserving HTTP status code (`httpCode`), response body, and response headers in the n8n UI.
+- Updated all 6 example workflow JSONs in `examples/` to use the unified `FrankLab` node with explicit `resource` parameters.
+
 ## 0.3.1 (2026-11-23)
 
 n8n Verified Community Node scanner compliance (`@n8n/scan-community-package` 0 errors / 0 warnings, 100% backward-compatible operation values):

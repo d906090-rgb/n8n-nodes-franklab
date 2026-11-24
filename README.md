@@ -8,7 +8,7 @@ FrankLab is a first-party media automation API for image processing, video post-
 
 This repository is the public n8n connector package only. It contains:
 
-- n8n node definitions for HOLST, KLEY, PLASTINKA, VOLNA, C2PA, SUFLER, TextSticker, ORKESTR, JUPITER, MARS, SATURN, MOON, VENUS, X, MiniMax, DOLA, Alibaba, OMNI, KUSOK, MERCURY, NEPTUNE, PLUTO, ARIES, TITAN, Hot Coffee, Social, FLUX, Narezka, VariantPack, and HeyGen Agent (30 nodes). Kling runs exclusively through the SATURN node (Kling 3.0 Omni) and the MARS node (Kling 3.0).
+- A single unified **FrankLab** action node (`@apergrex/n8n-nodes-franklab.frankLab`) exposing all 30 modules as top-level `Resource` options: HOLST, KLEY, PLASTINKA, VOLNA, C2PA, SUFLER, TextSticker, ORKESTR, JUPITER, MARS, SATURN, MOON, VENUS, X, MiniMax, DOLA, Alibaba, OMNI, KUSOK, MERCURY, NEPTUNE, PLUTO, ARIES, TITAN, Hot Coffee, Social, FLUX, Narezka, VariantPack, and HeyGen Agent. Kling runs exclusively through the SATURN resource (Kling 3.0 Omni) and the MARS resource (Kling 3.0).
 - FrankLab API credential definition.
 - A small request client that calls the public FrankLab API with your API key.
 - Tests, examples, and GitHub Actions workflows for n8n community-node verification and npm provenance publishing.
@@ -325,6 +325,7 @@ Recommended release flow:
 
 ## Version History
 
+- `0.4.0`: Consolidated all 30 modules into a single unified `FrankLab` action node (`Resource` → `Operation`) and wrapped HTTP/API errors in `NodeApiError` (preserving status code, response body, and headers) to satisfy n8n Verified Community Node review requirements.
 - `0.3.1`: n8n Verified Community Node scanner compliance — organized operations into `Resource` groups across 11 nodes (`DOLA`, `FLUX`, `HeyGen Agent`, `JUPITER`, `KUSOK`, `MARS`, `OMNI`, `SATURN`, `Social`, `TextSticker`, `TITAN`) and tightened `VOLNA` operation labels so `@n8n/scan-community-package` passes with 0 errors and 0 warnings (all operation values unchanged for full workflow backward compatibility).
 - `0.3.0`: Make.com P0 parity wave + Apergrex production origin (`https://apergrex.ru/franklab/api`) — 5 new nodes (`Social`, `FLUX`, `Narezka`, `VariantPack`, `HeyGen Agent` -> 30 nodes total) and Make-parity upgrades across `JUPITER` (Nano Banana, GPT Image 2 / Codex, Midjourney), `SATURN` (video extend, multi-image), `VOLNA` (ElevenLabs v4/v4-turbo, Gemini 3.8 TTS, Seed Audio 1.0, xAI TTS/STT, Google STT, voice RPCs), `OMNI` (`omni_1_2`, quotes, batches), `ALIBABA` (new image/video models and operations), `KLEY` (SPEKTR/quality-compare montage ops), `PLASTINKA` (`applySample`, `quality_compare`), and `KUSOK` (Moon H5 verification & Seedance assets).
 - `0.2.4`: ALIBABA video model selection (HappyHorse 1.1 / WAN 3.0 Video) with the WAN 3.0 audio, prompt-extension, watermark, last-frame and reference-image fields, a first-frame asset descriptor for image-to-video, and a Qwen text-to-image / image-edit toggle; C2PA gains a `Verify Asset` operation that returns a Content Credentials verdict for a public HTTPS URL.

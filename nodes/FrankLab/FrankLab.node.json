@@ -1,0 +1,16 @@
+{
+	"node": "@apergrex/n8n-nodes-franklab.frankLab",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": ["Marketing & Content", "Utility"],
+	"resources": {
+		"primaryDocumentation": [
+			{
+				"url": "https://apergrex.ru/docs/n8n"
+			},
+			{
+				"url": "https://github.com/d906090-rgb/n8n-nodes-franklab#readme"
+			}
+		]
+	}
+}
