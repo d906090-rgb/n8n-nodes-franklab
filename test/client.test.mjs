@@ -527,4 +527,89 @@ test('client sets default Volna v4, Seed Audio, xAI, Google STT operations and V
 	assert.equal(sent[3].body.operation, 'variant_pack');
 });
 
+test('client extracts Midjourney imageUrl, videos, prompts, buttons, modal_ready without data.result shadowing and stops polling on modal', async () => {
+	const calls = [];
+	const client = createFrankLabClient({
+		baseUrl: 'https://apergrex.ru',
+		apiKey: 'test_public_key',
+		fetch: async (url, init) => {
+			calls.push({ url, init });
+			if (url.endsWith('/v1/videos/midjourney') && init.method === 'POST') {
+				return jsonResponse({ code: 0, data: { task_id: 'mj_vid_1', status: 'queued' } });
+			}
+			if (url.endsWith('/v1/videos/midjourney/mj_vid_1')) {
+				return jsonResponse({
+					code: 0,
+					data: {
+						task_id: 'mj_vid_1',
+						status: 'succeed',
+						videos: ['https://apergrex.ru/franklab/api/media/11111111-1111-4111-8111-111111111111'],
+						result: { phase: 'done' },
+						final_cost_franks: 34.1,
+						cost_currency: '₣',
+						cost_status: 'confirmed',
+						cost_unit: 'per_operation',
+					},
+				});
+			}
+			if (url.endsWith('/v1/images/midjourney/mj_modal_1')) {
+				return jsonResponse({
+					code: 0,
+					data: {
+						task_id: 'mj_modal_1',
+						status: 'modal',
+						task_status: 'modal',
+						modal_ready: true,
+						grid_image_url: 'https://apergrex.ru/franklab/api/media/22222222-2222-4222-8222-222222222222',
+						prompts: ['prompt 1', 'prompt 2'],
+						buttons: [{ label: 'U1', custom_id: 'MJ::JOB::upsample::1', action: 'upscale', index: 1 }],
+						midjourney: { action: 'inpaint', modalReady: true },
+						result: { note: 'nested' },
+					},
+				});
+			}
+			if (url.endsWith('/v1/images/midjourney/mj_failed_1')) {
+				return jsonResponse({
+					code: 0,
+					message: 'OK',
+					data: {
+						task_id: 'mj_failed_1',
+						status: 'failed',
+						error_message: 'Moderation blocked image prompt',
+						result: null,
+					},
+				});
+			}
+			return jsonResponse({ code: 0, data: {} });
+		},
+	});
+
+	const submittedVid = await client.request('jupiter.midjourneyVideo', {
+		image_urls: ['https://cdn.example.com/start.jpg'],
+		batch_size: 1,
+	});
+	assert.equal(submittedVid.taskId, 'mj_vid_1');
+	assert.equal(JSON.parse(calls[0].init.body).operation, 'video');
+
+	const polledVid = await client.poll('jupiter.getMidjourneyVideoStatus', 'mj_vid_1', { delayMs: 0, maxAttempts: 2 });
+	assert.equal(polledVid.videoUrl, 'https://apergrex.ru/franklab/api/media/11111111-1111-4111-8111-111111111111');
+	assert.equal(polledVid.resultUrl, 'https://apergrex.ru/franklab/api/media/11111111-1111-4111-8111-111111111111');
+	assert.deepEqual(polledVid.videos, ['https://apergrex.ru/franklab/api/media/11111111-1111-4111-8111-111111111111']);
+	assert.equal(polledVid.final_cost_franks, 34.1);
+
+	const polledModal = await client.poll('jupiter.getMidjourneyImageStatus', 'mj_modal_1', { delayMs: 0, maxAttempts: 2 });
+	assert.equal(polledModal.status, 'modal');
+	assert.equal(polledModal.modal_ready, true);
+	assert.deepEqual(polledModal.midjourney, { action: 'inpaint', modalReady: true });
+	assert.equal(polledModal.imageUrl, 'https://apergrex.ru/franklab/api/media/22222222-2222-4222-8222-222222222222');
+	assert.equal(polledModal.resultUrl, 'https://apergrex.ru/franklab/api/media/22222222-2222-4222-8222-222222222222');
+	assert.deepEqual(polledModal.prompts, ['prompt 1', 'prompt 2']);
+	assert.equal(polledModal.buttons.length, 1);
+
+	await assert.rejects(
+		() => client.poll('jupiter.getMidjourneyImageStatus', 'mj_failed_1', { delayMs: 0, maxAttempts: 2 }),
+		/Moderation blocked image prompt/,
+	);
+});
+
 

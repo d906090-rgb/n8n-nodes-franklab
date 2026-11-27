@@ -61,7 +61,7 @@ export interface EndpointDefinition {
 	checkCodeEnvelopeError?: boolean;
 }
 
-export const SUCCESS_STATUSES = ['completed', 'success', 'succeed', 'succeeded', 'done', 'partial_success', 'ready', 'outcome_unknown', 'awaiting_review', 'scheduled'] as const;
+export const SUCCESS_STATUSES = ['completed', 'success', 'succeed', 'succeeded', 'done', 'partial_success', 'ready', 'modal', 'outcome_unknown', 'awaiting_review', 'scheduled'] as const;
 export const FAILURE_STATUSES = ['failed', 'fail', 'error', 'refunded', 'cancelled', 'canceled', 'stopped'] as const;
 export const ACTIVE_STATUSES = ['queued', 'processing', 'reserved', 'importing', 'pending'] as const;
 export const TERMINAL_STATUSES = [...SUCCESS_STATUSES, ...FAILURE_STATUSES] as const;
@@ -928,6 +928,10 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 	'jupiter.getYouchuanImageStatus': proxyV1Endpoint('jupiter', 'franklab-jupiter', 'getYouchuanImageStatus', 'GET', '/v1/images/youchuan-mj/:taskId', 'taskId path parameter'),
 	'jupiter.youchuanVideo': proxyV1Endpoint('jupiter', 'franklab-jupiter', 'youchuanVideo', 'POST', '/v1/videos/youchuan-mj', 'Youchuan Midjourney video operation payload'),
 	'jupiter.getYouchuanVideoStatus': proxyV1Endpoint('jupiter', 'franklab-jupiter', 'getYouchuanVideoStatus', 'GET', '/v1/videos/youchuan-mj/:taskId', 'taskId path parameter'),
+	'jupiter.midjourneyImage': proxyV1Endpoint('jupiter', 'franklab-jupiter', 'midjourneyImage', 'POST', '/v1/images/midjourney', 'Midjourney 16-action image operation payload'),
+	'jupiter.getMidjourneyImageStatus': proxyV1Endpoint('jupiter', 'franklab-jupiter', 'getMidjourneyImageStatus', 'GET', '/v1/images/midjourney/:taskId', 'taskId path parameter'),
+	'jupiter.midjourneyVideo': proxyV1Endpoint('jupiter', 'franklab-jupiter', 'midjourneyVideo', 'POST', '/v1/videos/midjourney', 'Midjourney image-to-video operation payload'),
+	'jupiter.getMidjourneyVideoStatus': proxyV1Endpoint('jupiter', 'franklab-jupiter', 'getMidjourneyVideoStatus', 'GET', '/v1/videos/midjourney/:taskId', 'taskId path parameter'),
 
 	// SATURN — Make parity additions (video-extend, multi-image2video).
 	'saturn.videoExtend': proxyV1Endpoint('saturn', 'franklab-saturn', 'videoExtend', 'POST', '/v1/videos/video-extend', 'video extend payload'),
@@ -1113,6 +1117,10 @@ export const MODULE_OPERATIONS: Record<FrankLabModule, string[]> = {
 		'getYouchuanImageStatus',
 		'youchuanVideo',
 		'getYouchuanVideoStatus',
+		'midjourneyImage',
+		'getMidjourneyImageStatus',
+		'midjourneyVideo',
+		'getMidjourneyVideoStatus',
 	],
 	mars: ['textToVideo', 'imageToVideo', 'effects', 'motionControl', 'getTextStatus', 'getImageStatus', 'getEffectsStatus', 'getMotionStatus'],
 	saturn: [

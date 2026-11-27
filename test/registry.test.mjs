@@ -124,6 +124,11 @@ test('Make-parity endpoints map to the documented partner API routes and auth fa
 
 	assert.equal(registry.getEndpoint('jupiter.omniImage').path, '/v1/images/omni-image');
 	assert.equal(registry.getEndpoint('jupiter.getSeedreamStatus').path, '/v1/images/seedream-image/:taskId');
+	assert.equal(registry.getEndpoint('jupiter.midjourneyImage').path, '/v1/images/midjourney');
+	assert.equal(registry.getEndpoint('jupiter.getMidjourneyImageStatus').path, '/v1/images/midjourney/:taskId');
+	assert.equal(registry.getEndpoint('jupiter.midjourneyVideo').path, '/v1/videos/midjourney');
+	assert.equal(registry.getEndpoint('jupiter.getMidjourneyVideoStatus').path, '/v1/videos/midjourney/:taskId');
+	assert.equal(registry.SUCCESS_STATUSES.includes('modal'), true);
 	assert.equal(registry.getEndpoint('mars.textToVideo').path, '/v1/videos/text2video');
 	assert.equal(registry.getEndpoint('mars.getMotionStatus').path, '/v1/videos/motion-control/:taskId');
 	assert.equal(registry.getEndpoint('saturn.turboImageToVideo').path, '/v1/videos/saturn-turbo/image-to-video');
@@ -225,6 +230,21 @@ test('Additional JSON media URL validation checks nested arrays and generic URL 
 	assert.throws(
 		() => urls.validatePublicMediaUrlsInPayload({ overlay: [{ url: 'file:///tmp/overlay.png' }] }),
 		/payload\.overlay\[0\]\.url: Only http and https media URLs are allowed/,
+	);
+	assert.equal(
+		urls.validatePublicMediaUrlsInPayload({
+			image_urls: ['https://cdn.example.com/a.jpg', 'https://cdn.example.com/b.jpg'],
+			mask_url: 'https://cdn.example.com/mask.png',
+		}),
+		true,
+	);
+	assert.throws(
+		() => urls.validatePublicMediaUrlsInPayload({ image_urls: ['https://cdn.example.com/a.jpg', 'http://169.254.169.254/latest/meta-data'] }),
+		/payload\.image_urls\[1\]: Local media URLs are not allowed/,
+	);
+	assert.throws(
+		() => urls.validatePublicMediaUrlsInPayload({ mask_url: 'http://127.0.0.1/mask.png' }),
+		/payload\.mask_url: Local media URLs are not allowed/,
 	);
 });
 

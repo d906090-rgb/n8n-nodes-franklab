@@ -27,7 +27,7 @@ test('package metadata is eligible for n8n community verification', () => {
 	assert.deepEqual(packageJson.n8n.nodes, [
 		'dist/nodes/FrankLab/FrankLab.node.js',
 	]);
-	assert.equal(packageJson.version, '0.4.0');
+	assert.equal(packageJson.version, '0.5.0');
 	// Monorepo tree keeps the host-lock wrapper; the public-mirror export rewrites
 	// scripts.test to the standalone form, so both are valid depending on environment.
 	assert.ok(

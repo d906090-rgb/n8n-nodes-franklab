@@ -40,6 +40,8 @@ export const jobIdProperty: INodeProperties = {
 				'getGptImageCodexStatus',
 				'getYouchuanImageStatus',
 				'getYouchuanVideoStatus',
+				'getMidjourneyImageStatus',
+				'getMidjourneyVideoStatus',
 				'getVideoExtendStatus',
 				'getMultiImageStatus',
 				'getBatchStatus',
@@ -135,6 +137,8 @@ const READ_ONLY_OPERATIONS = [
 	'getGptImageCodexStatus',
 	'getYouchuanImageStatus',
 	'getYouchuanVideoStatus',
+	'getMidjourneyImageStatus',
+	'getMidjourneyVideoStatus',
 	'getVideoExtendStatus',
 	'getMultiImageStatus',
 	'getBatchStatus',
@@ -206,6 +210,7 @@ const NO_POLL_OPERATIONS = [
 const MODULE_EXACT_MEDIA_FIELDS: Partial<Record<FrankLabModule, readonly string[]>> = {
 	venus: ['image', 'sound_file'],
 	mars: ['image'],
+	jupiter: ['reference_images', 'sref', 'cref', 'oref'],
 };
 
 export const waitProperty: INodeProperties = {
@@ -394,6 +399,7 @@ export function buildPayload(context: IExecuteFunctions, itemIndex: number, modu
 		'system_prompt',
 		'model',
 		'model_key',
+		'thinking_level',
 		'model_name',
 		'moonModel',
 		'templateId',
@@ -579,11 +585,36 @@ export function buildPayload(context: IExecuteFunctions, itemIndex: number, modu
 		'engine',
 		'gender',
 		'pageToken',
+		'image_urls',
+		'mjVersion',
+		'mjSize',
+		'mjQuality',
+		'index',
+		'custom_id',
+		'dimensions',
+		'stylize',
+		'chaos',
+		'weird',
+		'zoom_ratio',
+		'direction',
+		'mask_url',
+		'batch_size',
 	];
 
 	for (const field of simpleFields) {
-		const value = context.getNodeParameter(field, itemIndex, undefined) as unknown;
-		if (value !== undefined && value !== '') {
+		let value = context.getNodeParameter(field, itemIndex, undefined) as unknown;
+		if (Array.isArray(value)) {
+			const cleaned = value
+				.map((item) => (typeof item === 'string' ? item.trim() : item))
+				.filter((item) => item !== '' && item !== undefined && item !== null);
+			if (cleaned.length === 0) continue;
+			value = cleaned;
+		} else if (field === 'image_urls' && typeof value === 'string') {
+			const trimmed = value.trim();
+			if (!trimmed) continue;
+			value = [trimmed];
+		}
+		if (value !== undefined && value !== null && value !== '') {
 			const targetField =
 				field === 'operationName' || field === 'operationMode' || field === 'sampleOperation'
 					? 'operation'
@@ -591,9 +622,19 @@ export function buildPayload(context: IExecuteFunctions, itemIndex: number, modu
 						? 'model'
 						: field === 'pageToken'
 							? 'token'
-							: field;
+							: field === 'mjVersion'
+								? 'version'
+								: field === 'mjSize'
+									? 'size'
+									: field === 'mjQuality'
+										? 'quality'
+										: field;
 			payload[targetField] = value;
 		}
+	}
+
+	if (payload.execution_mode === 'direct') {
+		delete payload.execution_mode;
 	}
 
 	if (operation === 'revokeProfile' && payload.profileId) {
@@ -652,11 +693,16 @@ export function buildPayload(context: IExecuteFunctions, itemIndex: number, modu
 	) {
 		payload.taskId = payload.jobId;
 	}
-	if (moduleName === 'hotCoffe' && operation === 'createVideo' && typeof payload.video_url === 'string' && payload.video_url) {
-		if (!payload.video_list) {
-			payload.video_list = [{ video_url: payload.video_url }];
+	if (moduleName === 'hotCoffe' && operation === 'createVideo') {
+		if (payload.execution_mode === 'economy_rail' && payload.operation === 'video_extend') {
+			throw new Error('video_extend is not supported on economy_rail');
 		}
-		delete payload.video_url;
+		if (typeof payload.video_url === 'string' && payload.video_url) {
+			if (!payload.video_list) {
+				payload.video_list = [{ video_url: payload.video_url }];
+			}
+			delete payload.video_url;
+		}
 	}
 	if (moduleName === 'omni' && (operation === 'quoteBatch' || operation === 'createBatch') && !payload.request) {
 		const topLevelKeys = new Set(['count', 'idempotency_key', 'quote_id', 'accepted_total_franks']);
@@ -716,6 +762,21 @@ function validateConditionalUrls(moduleName: FrankLabModule, payload: Record<str
 			const link = (payload.settings as Record<string, unknown>).link;
 			if (typeof link === 'string' && link.trim()) {
 				validatePublicMediaUrl(link.trim());
+			}
+		}
+	}
+	if (moduleName === 'jupiter') {
+		if (typeof payload.mask_url === 'string' && payload.mask_url.trim()) {
+			validatePublicMediaUrl(payload.mask_url.trim());
+		}
+		const imageUrls = Array.isArray(payload.image_urls)
+			? payload.image_urls
+			: typeof payload.image_urls === 'string'
+				? [payload.image_urls]
+				: [];
+		for (const entry of imageUrls) {
+			if (typeof entry === 'string' && entry.trim()) {
+				validatePublicMediaUrl(entry.trim());
 			}
 		}
 	}

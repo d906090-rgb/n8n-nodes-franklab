@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.0 (2026-11-25)
+
+Full 16-action Midjourney contour on `JUPITER` and Economy Pool (`economy_rail`) draft routing:
+
+- **JUPITER Midjourney (`midjourneyImage`, `getMidjourneyImageStatus`, `midjourneyVideo`, `getMidjourneyVideoStatus`)**: added `POST/GET /v1/images/midjourney(/:taskId)` and `POST/GET /v1/videos/midjourney(/:taskId)` supporting all 16 actions (`imagine`, `blend`, `describe`, `edits`, `upscale`, `variation`, `high-variation`, `low-variation`, `reroll`, `zoom`, `pan`, `inpaint`, `modal`, `video`, `remix-strong`, `remix-subtle`) and full action parameters (`image_urls`, `parent_task_id`, `index`, `custom_id`, `speed`, `version` `v6.1..v8.2`, `size`, `dimensions`, `quality`, `style`, `seed`, `stylize`, `chaos`, `weird`, `negative_prompt`, `zoom_ratio`, `direction`, `mask_url`, `batch_size`), while keeping legacy `youchuan*` operations distinct and backward-compatible.
+- **Economy Pool (`economy_rail`) draft route selector**: added optional `execution_mode` (`direct` / `economy_rail`) strictly scoped to supported `/v1/*` operations on `JUPITER` (`omniImage`, `seedreamImage`, `geminiImage`), `MARS` (`textToVideo`, `imageToVideo`), `SATURN` (`video`, `turboTextToVideo`, `turboImageToVideo`), and `Hot Coffee` (`createVideo`, rejecting unsupported `video_extend` on `economy_rail`).
+- **Client output extraction & `modal` polling**: `extractOutput()` resolves `imageUrl`, `video_url`/`videos[]` (`string[]` and `{ url }[]`), and preserves top-level `grid_image_url`, `images`, `videos`, `prompts`, `buttons`, and `modal_ready` without `data.result` shadowing; `poll()` treats `modal` as a terminal state for two-step `inpaint` → `modal` workflows; `defaultBodyOperation()` sets `operation: 'video'` on `jupiter.midjourneyVideo`.
+- **SSRF & payload hygiene**: `url.ts` and `node-utils.ts` enforce public HTTP(S) SSRF checks on `string[]` `image_urls` (`*_urls` / `*Urls`) and `mask_url`, and omit empty `[]` multi-value defaults from request payloads.
+
 ## 0.4.0 (2026-11-23)
 
 n8n Verified Community Node review compliance (single regular action node + `NodeApiError`):
