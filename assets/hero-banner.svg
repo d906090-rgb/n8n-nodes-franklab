@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-label="FrankLab official n8n community node banner">
+	<defs>
+		<linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+			<stop offset="0%" stop-color="#080B10" />
+			<stop offset="55%" stop-color="#0E1520" />
+			<stop offset="100%" stop-color="#111A27" />
+		</linearGradient>
+		<linearGradient id="goldAccent" x1="0%" y1="0%" x2="100%" y2="0%">
+			<stop offset="0%" stop-color="#F6C453" />
+			<stop offset="100%" stop-color="#E09F24" />
+		</linearGradient>
+		<linearGradient id="tealAccent" x1="0%" y1="0%" x2="100%" y2="100%">
+			<stop offset="0%" stop-color="#2DD4BF" />
+			<stop offset="100%" stop-color="#0D9488" />
+		</linearGradient>
+		<linearGradient id="cardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+			<stop offset="0%" stop-color="#151F2E" />
+			<stop offset="100%" stop-color="#0D141F" />
+		</linearGradient>
+		<radialGradient id="glowGold" cx="22%" cy="18%" r="45%">
+			<stop offset="0%" stop-color="#F6C453" stop-opacity="0.16" />
+			<stop offset="100%" stop-color="#F6C453" stop-opacity="0" />
+		</radialGradient>
+		<radialGradient id="glowTeal" cx="82%" cy="78%" r="48%">
+			<stop offset="0%" stop-color="#14B8A6" stop-opacity="0.18" />
+			<stop offset="100%" stop-color="#14B8A6" stop-opacity="0" />
+		</radialGradient>
+		<pattern id="dotGrid" width="24" height="24" patternUnits="userSpaceOnUse">
+			<circle cx="2" cy="2" r="1" fill="#94A3B8" fill-opacity="0.12" />
+		</pattern>
+	</defs>
+
+	<!-- Outer Frame -->
+	<rect width="1200" height="360" rx="20" fill="url(#bgGrad)" />
+	<rect width="1200" height="360" rx="20" fill="url(#glowGold)" />
+	<rect width="1200" height="360" rx="20" fill="url(#glowTeal)" />
+	<rect width="1200" height="360" rx="20" fill="url(#dotGrid)" />
+	<rect x="1" y="1" width="1198" height="358" rx="19" fill="none" stroke="#F6C453" stroke-opacity="0.26" stroke-width="1.5" />
+
+	<!-- Left Column: Brand & Headline -->
+	<g transform="translate(56, 48)">
+		<!-- FrankLab Logo Mark -->
+		<rect x="0" y="0" width="52" height="52" rx="12" fill="#101824" stroke="#14B8A6" stroke-opacity="0.55" stroke-width="1.5" />
+		<path fill="url(#tealAccent)" d="M13 12h27v7H21v7h15v7H21v8h-8z" />
+
+		<!-- Connector Bridge -->
+		<line x1="62" y1="26" x2="86" y2="26" stroke="#F6C453" stroke-opacity="0.65" stroke-width="2" stroke-dasharray="4 3" />
+		<circle cx="74" cy="26" r="3" fill="#F6C453" />
+
+		<!-- n8n Node Pill -->
+		<rect x="94" y="8" width="152" height="36" rx="18" fill="#1A1520" stroke="#FF6D5A" stroke-opacity="0.55" stroke-width="1.2" />
+		<circle cx="114" cy="26" r="5" fill="#FF6D5A" />
+		<text x="128" y="31" fill="#F8FAFC" font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="13" font-weight="600" letter-spacing="0.3">n8n Community</text>
+
+		<!-- Version Badge -->
+		<rect x="258" y="8" width="76" height="36" rx="18" fill="#122324" stroke="#14B8A6" stroke-opacity="0.45" stroke-width="1.2" />
+		<text x="296" y="31" text-anchor="middle" fill="#2DD4BF" font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="13" font-weight="700">v0.5.0</text>
+
+		<!-- Main Title -->
+		<text x="0" y="108" fill="#FFFFFF" font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="40" font-weight="800" letter-spacing="-0.8">FrankLab for n8n</text>
+		<text x="332" y="108" fill="url(#goldAccent)" font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="22" font-weight="600">by Apergrex</text>
+
+		<!-- Subtitle -->
+		<text x="0" y="144" fill="#CBD5E1" font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="16.5" font-weight="400">Unified AI media generation, FFmpeg post-production, voice &amp; dubbing,</text>
+		<text x="0" y="168" fill="#CBD5E1" font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="16.5" font-weight="400">and 14-network social publishing inside one verified-ready node.</text>
+
+		<!-- Package Install Command Pill -->
+		<rect x="0" y="192" width="388" height="40" rx="10" fill="#0B1018" stroke="#334155" stroke-width="1.2" />
+		<text x="16" y="217" fill="#64748B" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13.5">npm</text>
+		<text x="54" y="217" fill="#F6C453" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" font-weight="600">@apergrex/n8n-nodes-franklab</text>
+
+		<!-- Feature Chips -->
+		<g transform="translate(0, 246)">
+			<rect x="0" y="0" width="142" height="26" rx="6" fill="#131C2B" stroke="#1E293B" />
+			<text x="71" y="17" text-anchor="middle" fill="#94A3B8" font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="11.5" font-weight="600">30 Modules · 1 Node</text>
+
+			<rect x="152" y="0" width="164" height="26" rx="6" fill="#131C2B" stroke="#1E293B" />
+			<text x="234" y="17" text-anchor="middle" fill="#94A3B8" font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="11.5" font-weight="600">Midjourney 16-Action</text>
+
+			<rect x="326" y="0" width="154" height="26" rx="6" fill="#131C2B" stroke="#1E293B" />
+			<text x="403" y="17" text-anchor="middle" fill="#94A3B8" font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="11.5" font-weight="600">0 Runtime Deps · SLSA</text>
+		</g>
+	</g>
+
+	<!-- Right Column: Visual n8n Pipeline Diagram -->
+	<g transform="translate(650, 42)">
+		<rect x="0" y="0" width="496" height="276" rx="16" fill="url(#cardGrad)" stroke="#1E293B" stroke-width="1.5" />
+		<text x="24" y="30" fill="#64748B" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11.5" font-weight="600" letter-spacing="1">WORKFLOW PIPELINE PREVIEW</text>
+		<circle cx="452" cy="25" r="4.5" fill="#14B8A6" />
+		<circle cx="468" cy="25" r="4.5" fill="#F6C453" />
+
+		<!-- Stage 1 Card -->
+		<g transform="translate(24, 50)">
+			<rect x="0" y="0" width="448" height="58" rx="10" fill="#0F172A" stroke="#14B8A6" stroke-opacity="0.45" stroke-width="1.2" />
+			<rect x="12" y="13" width="32" height="32" rx="8" fill="#132A2E" />
+			<text x="28" y="34" text-anchor="middle" fill="#2DD4BF" font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="14" font-weight="800">01</text>
+			<text x="56" y="26" fill="#F8FAFC" font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="13.5" font-weight="700">JUPITER · FLUX · HOLST</text>
+			<text x="56" y="44" fill="#94A3B8" font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="12">Midjourney 16 actions, GPT Image, Nano Banana, Seedream, BRIA</text>
+		</g>
+
+		<!-- Connector 1->2 -->
+		<line x1="248" y1="108" x2="248" y2="124" stroke="#F6C453" stroke-width="2" />
+
+		<!-- Stage 2 Card -->
+		<g transform="translate(24, 124)">
+			<rect x="0" y="0" width="448" height="58" rx="10" fill="#0F172A" stroke="#F6C453" stroke-opacity="0.45" stroke-width="1.2" />
+			<rect x="12" y="13" width="32" height="32" rx="8" fill="#292112" />
+			<text x="28" y="34" text-anchor="middle" fill="#F6C453" font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="14" font-weight="800">02</text>
+			<text x="56" y="26" fill="#F8FAFC" font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="13.5" font-weight="700">MARS · SATURN · MOON · OMNI · MiniMax</text>
+			<text x="56" y="44" fill="#94A3B8" font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="12">Kling 3.0 / Omni, Seedance, Veo, Grok Imagine, WAN 3.0 &amp; Draft Rail</text>
+		</g>
+
+		<!-- Connector 2->3 -->
+		<line x1="248" y1="182" x2="248" y2="198" stroke="#14B8A6" stroke-width="2" />
+
+		<!-- Stage 3 Card -->
+		<g transform="translate(24, 198)">
+			<rect x="0" y="0" width="448" height="58" rx="10" fill="#0F172A" stroke="#38BDF8" stroke-opacity="0.4" stroke-width="1.2" />
+			<rect x="12" y="13" width="32" height="32" rx="8" fill="#102336" />
+			<text x="28" y="34" text-anchor="middle" fill="#38BDF8" font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="14" font-weight="800">03</text>
+			<text x="56" y="26" fill="#F8FAFC" font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="13.5" font-weight="700">KLEY · VOLNA · ORKESTR · Social · C2PA</text>
+			<text x="56" y="44" fill="#94A3B8" font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="12">FFmpeg montage, subtitles, TTS/dubbing, C2PA &amp; 14 social networks</text>
+		</g>
+	</g>
+</svg>
