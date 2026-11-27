@@ -88,7 +88,49 @@ export const dolaResource: FrankLabResourceDefinition = {
 		name: "model_key",
 		type: "string",
 		default: "",
-		description: "Optional model key (see List Models)",
+		placeholder: "gemini_4_neon",
+		description: "Optional model key (e.g. gemini_4_carbon, gemini_4_neon, gemini_4_hydrogen, gemini_4_argon, gemini_3_8_flash, opus, sonnet, gpt6_astra; see List Models)",
+		displayOptions: {
+			show: {
+				operation: [
+					"generate"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Thinking Level",
+		name: "thinking_level",
+		type: "options",
+		default: "",
+		description: "Optional reasoning effort for Gemini models (xhigh is supported by gemini_4_neon and gemini_4_hydrogen)",
+		options: [
+			{
+				name: "High",
+				value: "high",
+				action: "Use high thinking effort"
+			},
+			{
+				name: "Low",
+				value: "low",
+				action: "Use low thinking effort"
+			},
+			{
+				name: "Medium",
+				value: "medium",
+				action: "Use medium thinking effort"
+			},
+			{
+				name: "Model Default",
+				value: "",
+				action: "Use the model default thinking level"
+			},
+			{
+				name: "XHigh (Neon / Hydrogen)",
+				value: "xhigh",
+				action: "Use xhigh thinking effort (Gemini 4 Neon and Hydrogen)"
+			}
+		],
 		displayOptions: {
 			show: {
 				operation: [

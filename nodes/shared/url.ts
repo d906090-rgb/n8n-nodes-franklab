@@ -86,19 +86,31 @@ function validateNestedMediaUrls(value: unknown, path: string, exactMediaFields:
 
 	for (const [key, nestedValue] of Object.entries(value)) {
 		const fieldPath = `${path}.${key}`;
-		if (isMediaUrlField(key, exactMediaFields) && typeof nestedValue === 'string' && nestedValue.trim() !== '') {
-			let violation: string | undefined;
-			try {
-				validatePublicMediaUrl(nestedValue);
-			} catch (error) {
-				violation = error instanceof Error ? error.message : String(error);
-			}
-			if (violation !== undefined) {
-				// Context-free URL/SSRF validator: node-utils.ts wraps this message into NodeOperationError.
-				throw new Error(`Media URL field ${fieldPath}: ${violation}`);
+		if (isMediaUrlField(key, exactMediaFields)) {
+			if (typeof nestedValue === 'string' && nestedValue.trim() !== '') {
+				assertSafeMediaUrlString(nestedValue.trim(), fieldPath);
+			} else if (Array.isArray(nestedValue)) {
+				nestedValue.forEach((item, index) => {
+					if (typeof item === 'string' && item.trim() !== '') {
+						assertSafeMediaUrlString(item.trim(), `${fieldPath}[${index}]`);
+					}
+				});
 			}
 		}
 		validateNestedMediaUrls(nestedValue, fieldPath, exactMediaFields);
+	}
+}
+
+function assertSafeMediaUrlString(candidateUrl: string, fieldPath: string): void {
+	let violation: string | undefined;
+	try {
+		validatePublicMediaUrl(candidateUrl);
+	} catch (error) {
+		violation = error instanceof Error ? error.message : String(error);
+	}
+	if (violation !== undefined) {
+		// Context-free URL/SSRF validator: node-utils.ts wraps this message into NodeOperationError.
+		throw new Error(`Media URL field ${fieldPath}: ${violation}`);
 	}
 }
 
@@ -112,7 +124,18 @@ function isMediaUrlField(key: string, exactMediaFields: readonly string[]): bool
 	// Generic suffix rule only: bare keys like `image` may legally carry base64 data on
 	// some surfaces (e.g. Jupiter omni-image edit mode), so they are validated only when
 	// the calling module declares them as URL fields via exactMediaFields.
-	return lower === 'url' || lower.endsWith('_url') || lower.endsWith('-url') || key.endsWith('Url') || key.endsWith('URL');
+	return (
+		lower === 'url' ||
+		lower === 'urls' ||
+		lower.endsWith('_url') ||
+		lower.endsWith('-url') ||
+		lower.endsWith('_urls') ||
+		lower.endsWith('-urls') ||
+		key.endsWith('Url') ||
+		key.endsWith('URL') ||
+		key.endsWith('Urls') ||
+		key.endsWith('URLs')
+	);
 }
 
 function normalizeHostname(hostname: string): string {

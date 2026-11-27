@@ -35,6 +35,11 @@ async function collectFiles(dir) {
 	return files;
 }
 
+const forbiddenCaseInsensitiveFragments = [
+	'toa' + 'pis',
+	'api' + 'mart',
+];
+
 test('package source contains no env, file-system, PEM, or credential leakage markers', async () => {
 	const rootPath = packageRoot.pathname;
 	const files = await collectFiles(rootPath);
@@ -42,8 +47,12 @@ test('package source contains no env, file-system, PEM, or credential leakage ma
 
 	for (const file of files) {
 		const body = await readFile(file, 'utf8');
+		const lower = body.toLowerCase();
 		for (const fragment of forbiddenFragments) {
 			assert.equal(body.includes(fragment), false, `${relative(rootPath, file)} contains ${fragment}`);
+		}
+		for (const fragment of forbiddenCaseInsensitiveFragments) {
+			assert.equal(lower.includes(fragment), false, `${relative(rootPath, file)} contains ${fragment}`);
 		}
 	}
 });

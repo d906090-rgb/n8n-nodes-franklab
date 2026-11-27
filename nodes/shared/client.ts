@@ -256,7 +256,7 @@ function extractOutput(endpoint: EndpointDefinition, body: unknown, input: Reque
 	const rawData = root.data ?? root;
 	const data = isRecord(rawData) ? rawData : {};
 	const result = isRecord(data.result) ? data.result : data;
-	const status = result.task_status ?? result.status ?? data.status ?? root.status;
+	const status = result.task_status ?? result.status ?? data.task_status ?? data.status ?? root.status;
 	const taskId =
 		result.task_id ??
 		result.taskId ??
@@ -267,6 +267,7 @@ function extractOutput(endpoint: EndpointDefinition, body: unknown, input: Reque
 		result.importId ??
 		result.sessionId ??
 		result.videoId ??
+		data.task_id ??
 		data.taskId ??
 		data.billing_task_id ??
 		data.batch_id ??
@@ -302,25 +303,55 @@ function extractOutput(endpoint: EndpointDefinition, body: unknown, input: Reque
 		return { options, items, data: options };
 	}
 
-	const nestedVideo = isRecord(result.video) ? result.video : undefined;
+	const nestedVideo = isRecord(result.video) ? result.video : isRecord(data.video) ? data.video : undefined;
+	const imageUrl =
+		asNonEmptyString(result.imageUrl) ??
+		asNonEmptyString(data.imageUrl) ??
+		asNonEmptyString(result.image_url) ??
+		asNonEmptyString(data.image_url) ??
+		asNonEmptyString(result.grid_image_url) ??
+		asNonEmptyString(data.grid_image_url) ??
+		firstUrlOrString(result, 'images') ??
+		firstUrlOrString(data, 'images') ??
+		firstUrlOrString(result.task_result, 'images') ??
+		firstUrlOrString(data.task_result, 'images') ??
+		firstUrlOrString(result.output, 'images') ??
+		firstUrlOrString(result.output, 'imageUrls');
 	const videoUrl =
-		result.videoUrl ??
-		data.videoUrl ??
-		nestedVideo?.video_url ??
-		nestedVideo?.videoUrl ??
-		nestedVideo?.url ??
-		firstUrl(result.task_result, 'videos');
+		asNonEmptyString(result.videoUrl) ??
+		asNonEmptyString(data.videoUrl) ??
+		asNonEmptyString(result.video_url) ??
+		asNonEmptyString(data.video_url) ??
+		asNonEmptyString(nestedVideo?.video_url) ??
+		asNonEmptyString(nestedVideo?.videoUrl) ??
+		asNonEmptyString(nestedVideo?.url) ??
+		firstUrlOrString(result, 'videos') ??
+		firstUrlOrString(data, 'videos') ??
+		firstUrlOrString(result.task_result, 'videos') ??
+		firstUrlOrString(data.task_result, 'videos');
+	const preservedTopLevel = pickMediaAndMidjourneyFields(data, result);
 
 	return {
+		...preservedTopLevel,
 		...result,
 		...pickCostFields(data),
 		taskId,
 		status,
 		audioUrl: result.audioUrl ?? result.resultUrl ?? firstUrl(result.task_result, 'audios'),
+		...(imageUrl !== undefined ? { imageUrl } : {}),
 		...(videoUrl !== undefined ? { videoUrl } : {}),
-		resultUrl: result.resultUrl ?? result.audioUrl ?? videoUrl ?? firstUrl(result.task_result, 'audios'),
+		resultUrl: result.resultUrl ?? data.resultUrl ?? result.audioUrl ?? videoUrl ?? imageUrl ?? firstUrl(result.task_result, 'audios'),
 		downloadUrl: result.downloadUrl ?? data.downloadUrl ?? nestedVideo?.download_url ?? nestedVideo?.downloadUrl,
-		error: result.error ?? data.error ?? root.message ?? root.msg ?? null,
+		error:
+			result.error ??
+			data.error ??
+			result.error_message ??
+			data.error_message ??
+			result.task_status_msg ??
+			data.task_status_msg ??
+			root.message ??
+			root.msg ??
+			null,
 	};
 }
 
@@ -353,7 +384,16 @@ function extractErrorMessage(body: unknown, status: number): string {
 	if (isRecord(body)) {
 		const data = isRecord(body.data) ? body.data : {};
 		const result = isRecord(data.result) ? data.result : {};
-		const message = result.task_status_msg ?? result.error ?? data.error ?? body.msg ?? body.message ?? body.error;
+		const message =
+			result.task_status_msg ??
+			result.error_message ??
+			result.error ??
+			data.task_status_msg ??
+			data.error_message ??
+			data.error ??
+			body.msg ??
+			body.message ??
+			body.error;
 		if (typeof message === 'string' && message.trim()) return message;
 	}
 	return `FrankLab request failed with HTTP ${status}`;
@@ -368,11 +408,50 @@ function pickCostFields(data: Record<string, unknown>): Record<string, unknown> 
 	return output;
 }
 
+function pickMediaAndMidjourneyFields(data: Record<string, unknown>, result: Record<string, unknown>): Record<string, unknown> {
+	const fields = [
+		'task_status',
+		'modal_ready',
+		'midjourney',
+		'grid_image_url',
+		'image_url',
+		'images',
+		'video_url',
+		'videos',
+		'prompts',
+		'shortened_prompts',
+		'output_text',
+		'buttons',
+	];
+	const output: Record<string, unknown> = {};
+	for (const field of fields) {
+		if (data[field] !== undefined && result[field] === undefined) {
+			output[field] = data[field];
+		}
+	}
+	return output;
+}
+
+function asNonEmptyString(value: unknown): string | undefined {
+	return typeof value === 'string' && value.trim() !== '' ? value : undefined;
+}
+
 function firstUrl(container: unknown, key: string): string | undefined {
 	if (!isRecord(container)) return undefined;
 	const values = container[key];
 	if (!Array.isArray(values)) return undefined;
 	for (const item of values) {
+		if (isRecord(item) && typeof item.url === 'string' && item.url) return item.url;
+	}
+	return undefined;
+}
+
+function firstUrlOrString(container: unknown, key: string): string | undefined {
+	if (!isRecord(container)) return undefined;
+	const values = container[key];
+	if (!Array.isArray(values)) return undefined;
+	for (const item of values) {
+		if (typeof item === 'string' && item.trim()) return item.trim();
 		if (isRecord(item) && typeof item.url === 'string' && item.url) return item.url;
 	}
 	return undefined;
@@ -412,6 +491,8 @@ function defaultBodyOperation(endpointKey: string): string | null {
 			return 'xai-voice-list';
 		case 'variantPack.create':
 			return 'variant_pack';
+		case 'jupiter.midjourneyVideo':
+			return 'video';
 		default:
 			return null;
 	}

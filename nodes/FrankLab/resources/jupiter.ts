@@ -10,7 +10,9 @@ export const jupiterResource: FrankLabResourceDefinition = {
 	geminiImage: "getGeminiStatus",
 	gptImageCodex: "getGptImageCodexStatus",
 	youchuanImage: "getYouchuanImageStatus",
-	youchuanVideo: "getYouchuanVideoStatus"
+	youchuanVideo: "getYouchuanVideoStatus",
+	midjourneyImage: "getMidjourneyImageStatus",
+	midjourneyVideo: "getMidjourneyVideoStatus"
 },
 	operationProperty: {
 		displayName: 'Operation',
@@ -28,6 +30,11 @@ export const jupiterResource: FrankLabResourceDefinition = {
 	{
 		name: "Generate Image (Midjourney / Youchuan)",
 		value: "youchuanImage",
+		action: "Run a midjourney youchuan image operation"
+	},
+	{
+		name: "Generate Image (Midjourney)",
+		value: "midjourneyImage",
 		action: "Run a midjourney image operation"
 	},
 	{
@@ -53,6 +60,11 @@ export const jupiterResource: FrankLabResourceDefinition = {
 	{
 		name: "Generate Video (Midjourney / Youchuan)",
 		value: "youchuanVideo",
+		action: "Generate a midjourney youchuan video"
+	},
+	{
+		name: "Generate Video (Midjourney)",
+		value: "midjourneyVideo",
 		action: "Generate a midjourney video"
 	},
 	{
@@ -62,12 +74,12 @@ export const jupiterResource: FrankLabResourceDefinition = {
 	},
 	{
 		name: "Get Midjourney Image Status",
-		value: "getYouchuanImageStatus",
+		value: "getMidjourneyImageStatus",
 		action: "Get a midjourney image task status"
 	},
 	{
 		name: "Get Midjourney Video Status",
-		value: "getYouchuanVideoStatus",
+		value: "getMidjourneyVideoStatus",
 		action: "Get a midjourney video task status"
 	},
 	{
@@ -89,10 +101,46 @@ export const jupiterResource: FrankLabResourceDefinition = {
 		name: "Get Seedream Image Status",
 		value: "getSeedreamStatus",
 		action: "Get a seedream task status"
+	},
+	{
+		name: "Get Youchuan Midjourney Image Status",
+		value: "getYouchuanImageStatus",
+		action: "Get a youchuan midjourney image task status"
+	},
+	{
+		name: "Get Youchuan Midjourney Video Status",
+		value: "getYouchuanVideoStatus",
+		action: "Get a youchuan midjourney video task status"
 	}
 		],
 	},
 	fields: [
+	{
+		displayName: "Execution Mode",
+		name: "execution_mode",
+		type: "options",
+		default: "",
+		description: "Optional execution route (Economy Pool is a draft-tier route unavailable to confirmed B2B legal-entity accounts, without automatic fallback)",
+		options: [
+			{
+				name: "Direct (Default)",
+				value: ""
+			},
+			{
+				name: "Economy Pool (Draft)",
+				value: "economy_rail"
+			}
+		],
+		displayOptions: {
+			show: {
+				operation: [
+					"omniImage",
+					"seedreamImage",
+					"geminiImage"
+				]
+			}
+		}
+	},
 	{
 		displayName: "Prompt",
 		name: "prompt",
@@ -125,7 +173,9 @@ export const jupiterResource: FrankLabResourceDefinition = {
 			show: {
 				operation: [
 					"youchuanImage",
-					"youchuanVideo"
+					"youchuanVideo",
+					"midjourneyImage",
+					"midjourneyVideo"
 				]
 			}
 		}
@@ -390,7 +440,503 @@ export const jupiterResource: FrankLabResourceDefinition = {
 			show: {
 				operation: [
 					"youchuanImage",
-					"youchuanVideo"
+					"youchuanVideo",
+					"midjourneyImage",
+					"midjourneyVideo"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Midjourney Action",
+		name: "operationMode",
+		type: "options",
+		noDataExpression: true,
+		default: "imagine",
+		options: [
+			{
+				name: "Blend",
+				value: "blend"
+			},
+			{
+				name: "Describe",
+				value: "describe"
+			},
+			{
+				name: "Edits",
+				value: "edits"
+			},
+			{
+				name: "High Variation",
+				value: "high-variation"
+			},
+			{
+				name: "Imagine",
+				value: "imagine"
+			},
+			{
+				name: "Inpaint",
+				value: "inpaint"
+			},
+			{
+				name: "Low Variation",
+				value: "low-variation"
+			},
+			{
+				name: "Modal",
+				value: "modal"
+			},
+			{
+				name: "Pan",
+				value: "pan"
+			},
+			{
+				name: "Remix Strong",
+				value: "remix-strong"
+			},
+			{
+				name: "Remix Subtle",
+				value: "remix-subtle"
+			},
+			{
+				name: "Reroll",
+				value: "reroll"
+			},
+			{
+				name: "Upscale",
+				value: "upscale"
+			},
+			{
+				name: "Variation",
+				value: "variation"
+			},
+			{
+				name: "Zoom",
+				value: "zoom"
+			}
+		],
+		displayOptions: {
+			show: {
+				operation: [
+					"midjourneyImage"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Image URLs",
+		name: "image_urls",
+		type: "string",
+		typeOptions: {
+			multipleValues: true
+		},
+		default: [],
+		description: "Public http(s) reference or source image URLs (up to 12 MiB each)",
+		displayOptions: {
+			show: {
+				operation: [
+					"midjourneyImage",
+					"midjourneyVideo"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Slot Index",
+		name: "index",
+		type: "options",
+		default: "",
+		description: "Optional grid slot index (1-4) of the parent task",
+		options: [
+			{
+				name: "1",
+				value: 1
+			},
+			{
+				name: "2",
+				value: 2
+			},
+			{
+				name: "3",
+				value: 3
+			},
+			{
+				name: "4",
+				value: 4
+			},
+			{
+				name: "Default",
+				value: ""
+			}
+		],
+		displayOptions: {
+			show: {
+				operation: [
+					"midjourneyImage",
+					"midjourneyVideo"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Custom ID",
+		name: "custom_id",
+		type: "string",
+		default: "",
+		description: "Optional button custom_id returned on a parent Midjourney task",
+		displayOptions: {
+			show: {
+				operation: [
+					"midjourneyImage",
+					"midjourneyVideo"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Midjourney Speed",
+		name: "speed",
+		type: "options",
+		default: "",
+		options: [
+			{
+				name: "Default",
+				value: ""
+			},
+			{
+				name: "Fast",
+				value: "fast"
+			},
+			{
+				name: "Relax",
+				value: "relax"
+			},
+			{
+				name: "Turbo",
+				value: "turbo"
+			}
+		],
+		displayOptions: {
+			show: {
+				operation: [
+					"midjourneyImage",
+					"midjourneyVideo"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Midjourney Model Version",
+		name: "mjVersion",
+		type: "options",
+		default: "",
+		options: [
+			{
+				name: "Default",
+				value: ""
+			},
+			{
+				name: "V6.1",
+				value: "v6.1"
+			},
+			{
+				name: "V7",
+				value: "v7"
+			},
+			{
+				name: "V8.1",
+				value: "v8.1"
+			},
+			{
+				name: "V8.2",
+				value: "v8.2"
+			}
+		],
+		displayOptions: {
+			show: {
+				operation: [
+					"midjourneyImage"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Midjourney Aspect Ratio",
+		name: "mjSize",
+		type: "string",
+		default: "",
+		description: "Optional Midjourney aspect ratio sent as size (for example 1:1, 16:9, 9:16)",
+		displayOptions: {
+			show: {
+				operation: [
+					"midjourneyImage"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Blend Dimensions",
+		name: "dimensions",
+		type: "options",
+		default: "",
+		options: [
+			{
+				name: "Default",
+				value: ""
+			},
+			{
+				name: "Landscape",
+				value: "LANDSCAPE"
+			},
+			{
+				name: "Portrait",
+				value: "PORTRAIT"
+			},
+			{
+				name: "Square",
+				value: "SQUARE"
+			}
+		],
+		displayOptions: {
+			show: {
+				operation: [
+					"midjourneyImage"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Midjourney Quality",
+		name: "mjQuality",
+		type: "options",
+		default: "",
+		options: [
+			{
+				name: "0.25",
+				value: 0.25
+			},
+			{
+				name: "0.5",
+				value: 0.5
+			},
+			{
+				name: "1",
+				value: 1
+			},
+			{
+				name: "2",
+				value: 2
+			},
+			{
+				name: "Default",
+				value: ""
+			}
+		],
+		displayOptions: {
+			show: {
+				operation: [
+					"midjourneyImage"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Midjourney Style",
+		name: "style",
+		type: "options",
+		default: "",
+		options: [
+			{
+				name: "Default",
+				value: ""
+			},
+			{
+				name: "Raw",
+				value: "raw"
+			}
+		],
+		displayOptions: {
+			show: {
+				operation: [
+					"midjourneyImage"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Seed",
+		name: "seed",
+		type: "number",
+		default: "",
+		description: "Optional generation seed",
+		displayOptions: {
+			show: {
+				operation: [
+					"midjourneyImage"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Stylize",
+		name: "stylize",
+		type: "number",
+		default: "",
+		description: "Optional stylize strength (0-1000)",
+		displayOptions: {
+			show: {
+				operation: [
+					"midjourneyImage"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Chaos",
+		name: "chaos",
+		type: "number",
+		default: "",
+		description: "Optional grid variation chaos (0-100)",
+		displayOptions: {
+			show: {
+				operation: [
+					"midjourneyImage"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Weird",
+		name: "weird",
+		type: "number",
+		default: "",
+		description: "Optional weirdness strength (0-3000)",
+		displayOptions: {
+			show: {
+				operation: [
+					"midjourneyImage"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Negative Prompt",
+		name: "negative_prompt",
+		type: "string",
+		default: "",
+		description: "Optional elements to exclude from the image",
+		displayOptions: {
+			show: {
+				operation: [
+					"midjourneyImage"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Zoom Ratio",
+		name: "zoom_ratio",
+		type: "options",
+		default: "",
+		options: [
+			{
+				name: "1.5x",
+				value: 1.5
+			},
+			{
+				name: "2x",
+				value: 2
+			},
+			{
+				name: "Default",
+				value: ""
+			}
+		],
+		displayOptions: {
+			show: {
+				operation: [
+					"midjourneyImage"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Pan Direction",
+		name: "direction",
+		type: "options",
+		default: "",
+		options: [
+			{
+				name: "Default",
+				value: ""
+			},
+			{
+				name: "Down",
+				value: "down"
+			},
+			{
+				name: "Left",
+				value: "left"
+			},
+			{
+				name: "Right",
+				value: "right"
+			},
+			{
+				name: "Up",
+				value: "up"
+			}
+		],
+		displayOptions: {
+			show: {
+				operation: [
+					"midjourneyImage"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Mask URL",
+		name: "mask_url",
+		type: "string",
+		default: "",
+		description: "Public http(s) black-and-white mask PNG URL (up to 12 MiB) for inpaint or modal",
+		displayOptions: {
+			show: {
+				operation: [
+					"midjourneyImage"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Batch Size",
+		name: "batch_size",
+		type: "options",
+		default: "",
+		description: "Optional number of video clips to generate (1, 2, or 4)",
+		options: [
+			{
+				name: "1",
+				value: 1
+			},
+			{
+				name: "2",
+				value: 2
+			},
+			{
+				name: "4",
+				value: 4
+			},
+			{
+				name: "Default",
+				value: ""
+			}
+		],
+		displayOptions: {
+			show: {
+				operation: [
+					"midjourneyVideo"
 				]
 			}
 		}
@@ -413,6 +959,20 @@ export const jupiterResource: FrankLabResourceDefinition = {
 		}
 	},
 	{
+		displayName: "Model Name",
+		name: "model_name",
+		type: "string",
+		default: "",
+		description: "Optional Omni Image model slug (for example jupiter-v1-5 on direct, or mist, gpt-image-2.5-sunburst, gpt-image-2.5-flare, gpt-image-2.6-sunburst, gpt-image-2.6-flare)",
+		displayOptions: {
+			show: {
+				operation: [
+					"omniImage"
+				]
+			}
+		}
+	},
+	{
 		displayName: "Resolution",
 		name: "resolution",
 		type: "string",
@@ -421,7 +981,8 @@ export const jupiterResource: FrankLabResourceDefinition = {
 		displayOptions: {
 			show: {
 				operation: [
-					"omniImage"
+					"omniImage",
+					"seedreamImage"
 				]
 			}
 		}

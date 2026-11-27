@@ -61,6 +61,31 @@ export const marsResource: FrankLabResourceDefinition = {
 	},
 	fields: [
 	{
+		displayName: "Execution Mode",
+		name: "execution_mode",
+		type: "options",
+		default: "",
+		description: "Optional execution route (Economy Pool is a draft-tier route unavailable to confirmed B2B legal-entity accounts, without automatic fallback)",
+		options: [
+			{
+				name: "Direct (Default)",
+				value: ""
+			},
+			{
+				name: "Economy Pool (Draft)",
+				value: "economy_rail"
+			}
+		],
+		displayOptions: {
+			show: {
+				operation: [
+					"textToVideo",
+					"imageToVideo"
+				]
+			}
+		}
+	},
+	{
 		displayName: "Prompt",
 		name: "prompt",
 		type: "string",

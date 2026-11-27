@@ -136,9 +136,10 @@ Public verified v1 intentionally excludes private key import and private key rot
 
 ### JUPITER
 
-- Generate images with omni-image (generate/edit modes, quality, output format, aspect ratio, series) or seedream.
+- Generate images with omni-image (generate/edit modes, quality, output format, aspect ratio, series), Google Gemini / Nano Banana, GPT Image 2 / Codex, Seedream, or the full 16-action Midjourney contour (`imagine`, `blend`, `describe`, `edits`, `upscale`, `variation`, `high-variation`, `low-variation`, `reroll`, `zoom`, `pan`, `inpaint`, `modal`, `video`, `remix-strong`, `remix-subtle`) plus Midjourney image-to-video (`midjourneyVideo`).
+- Optional `Economy Pool (Draft)` (`economy_rail`) execution route on `omniImage`, `seedreamImage`, and `geminiImage` (also available on `MARS` text/image-to-video, `SATURN` video/turbo, and `Hot Coffee` `createVideo`).
 - Recraft tasks (create + status) for background removal and similar image operations.
-- Task status polling per endpoint.
+- Task status polling per endpoint, including `grid_image_url`, `images`, `videos`, `prompts`, `buttons`, and two-step `modal_ready` (`modal`) workflows.
 
 ### MARS
 
@@ -325,6 +326,7 @@ Recommended release flow:
 
 ## Version History
 
+- `0.5.0`: Added the full 16-action Midjourney contour (`midjourneyImage`, `getMidjourneyImageStatus`, `midjourneyVideo`, `getMidjourneyVideoStatus`) on `JUPITER`, optional `Economy Pool (Draft)` (`economy_rail`) routing on `JUPITER`, `MARS`, `SATURN`, and `Hot Coffee` (`createVideo`), `imageUrl`/`video_url`/`videos`/`prompts`/`buttons`/`modal_ready` output extraction without `data.result` shadowing, `modal` terminal polling support, and `string[]` `image_urls` / `mask_url` SSRF validation.
 - `0.4.0`: Consolidated all 30 modules into a single unified `FrankLab` action node (`Resource` → `Operation`) and wrapped HTTP/API errors in `NodeApiError` (preserving status code, response body, and headers) to satisfy n8n Verified Community Node review requirements.
 - `0.3.1`: n8n Verified Community Node scanner compliance — organized operations into `Resource` groups across 11 nodes (`DOLA`, `FLUX`, `HeyGen Agent`, `JUPITER`, `KUSOK`, `MARS`, `OMNI`, `SATURN`, `Social`, `TextSticker`, `TITAN`) and tightened `VOLNA` operation labels so `@n8n/scan-community-package` passes with 0 errors and 0 warnings (all operation values unchanged for full workflow backward compatibility).
 - `0.3.0`: Make.com P0 parity wave + Apergrex production origin (`https://apergrex.ru/franklab/api`) — 5 new nodes (`Social`, `FLUX`, `Narezka`, `VariantPack`, `HeyGen Agent` -> 30 nodes total) and Make-parity upgrades across `JUPITER` (Nano Banana, GPT Image 2 / Codex, Midjourney), `SATURN` (video extend, multi-image), `VOLNA` (ElevenLabs v4/v4-turbo, Gemini 3.8 TTS, Seed Audio 1.0, xAI TTS/STT, Google STT, voice RPCs), `OMNI` (`omni_1_2`, quotes, batches), `ALIBABA` (new image/video models and operations), `KLEY` (SPEKTR/quality-compare montage ops), `PLASTINKA` (`applySample`, `quality_compare`), and `KUSOK` (Moon H5 verification & Seedance assets).

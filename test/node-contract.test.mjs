@@ -227,6 +227,35 @@ test('omni quoteBatch wraps flat video fields into request object', () => {
 	assert.deepEqual(payload.request, { operation: 'text_to_video', model: 'omni_1_2', prompt: 'sunset drone' });
 });
 
+test('dola generate forwards Gemini 4 model_key and thinking_level (including xhigh for Neon/Hydrogen)', () => {
+	const neon = buildPayload(
+		stubContext({ prompt: 'Design a 3D scene', model_key: 'gemini_4_neon', thinking_level: 'xhigh' }),
+		0,
+		'dola',
+		'generate',
+	);
+	assert.equal(neon.model_key, 'gemini_4_neon');
+	assert.equal(neon.thinking_level, 'xhigh');
+
+	const hydrogen = buildPayload(
+		stubContext({ prompt: 'Fast summary', model_key: 'gemini_4_hydrogen', thinking_level: 'high' }),
+		0,
+		'dola',
+		'generate',
+	);
+	assert.equal(hydrogen.model_key, 'gemini_4_hydrogen');
+	assert.equal(hydrogen.thinking_level, 'high');
+
+	const carbon = buildPayload(
+		stubContext({ prompt: 'Deep analysis', model_key: 'gemini_4_carbon', thinking_level: 'medium' }),
+		0,
+		'dola',
+		'generate',
+	);
+	assert.equal(carbon.model_key, 'gemini_4_carbon');
+	assert.equal(carbon.thinking_level, 'medium');
+});
+
 test('plastinka applySample maps sampleOperation to operation and preserves sampleId', () => {
 	const payload = buildPayload(
 		stubContext({ videoUrl: 'https://cdn.example.com/v.mp4', sampleOperation: 'replace', sampleId: 'smp_42' }),
@@ -354,6 +383,191 @@ test('kusok moonOperation defaults backend to moon and heygenAgent maps pageToke
 
 	const heygen = buildPayload(stubContext({ providerAccountMode: 'franklab', pageToken: 'cursor_2' }), 0, 'heygenAgent', 'listSessions');
 	assert.equal(heygen.token, 'cursor_2');
+});
+
+test('jupiter midjourneyImage maps 16-action fields, skips empty image_urls[], and enforces SSRF on image_urls and mask_url', () => {
+	const imagine = buildPayload(
+		stubContext({
+			operationMode: 'imagine',
+			prompt: 'stormy lighthouse',
+			image_urls: [],
+			mjVersion: 'v8.2',
+			mjSize: '16:9',
+			mjQuality: 1,
+			speed: 'fast',
+			style: 'raw',
+			stylize: 250,
+			chaos: 0,
+			weird: 0,
+			seed: 42,
+			negative_prompt: 'blurry',
+		}),
+		0,
+		'jupiter',
+		'midjourneyImage',
+	);
+	assert.equal(imagine.operation, 'imagine');
+	assert.equal(imagine.version, 'v8.2');
+	assert.equal(imagine.size, '16:9');
+	assert.equal(imagine.quality, 1);
+	assert.equal(imagine.chaos, 0);
+	assert.equal(imagine.weird, 0);
+	assert.equal(imagine.seed, 42);
+	assert.equal(imagine.image_urls, undefined);
+
+	const modal = buildPayload(
+		stubContext({
+			operationMode: 'modal',
+			parent_task_id: 'franklab_parent_1',
+			mask_url: 'https://cdn.example.com/mask.png',
+			prompt: 'bright sky',
+		}),
+		0,
+		'jupiter',
+		'midjourneyImage',
+	);
+	assert.equal(modal.operation, 'modal');
+	assert.equal(modal.parent_task_id, 'franklab_parent_1');
+	assert.equal(modal.mask_url, 'https://cdn.example.com/mask.png');
+
+	const props = new FrankLab().description.properties;
+	const mjActionProp = props.find(
+		(p) =>
+			p.name === 'operationMode' &&
+			p.displayOptions?.show?.resource?.[0] === 'jupiter' &&
+			p.displayOptions?.show?.operation?.includes('midjourneyImage'),
+	);
+	assert.deepEqual(
+		mjActionProp.options.map((o) => o.value),
+		[
+			'blend',
+			'describe',
+			'edits',
+			'high-variation',
+			'imagine',
+			'inpaint',
+			'low-variation',
+			'modal',
+			'pan',
+			'remix-strong',
+			'remix-subtle',
+			'reroll',
+			'upscale',
+			'variation',
+			'zoom',
+		],
+	);
+
+	assert.throws(
+		() =>
+			buildPayload(
+				stubContext({
+					operationMode: 'blend',
+					image_urls: ['https://cdn.example.com/ok.jpg', 'http://169.254.169.254/latest/meta-data'],
+				}),
+				0,
+				'jupiter',
+				'midjourneyImage',
+			),
+		/Local media URLs are not allowed/,
+	);
+	assert.throws(
+		() =>
+			buildPayload(
+				stubContext({
+					operationMode: 'modal',
+					parent_task_id: 'franklab_parent_1',
+					mask_url: 'http://127.0.0.1:8080/mask.png',
+				}),
+				0,
+				'jupiter',
+				'midjourneyImage',
+			),
+		/Local media URLs are not allowed/,
+	);
+});
+
+test('economy_rail execution_mode scopes strictly to covered /v1 operations, strips direct, and rejects hotCoffe video_extend', () => {
+	const ok = buildPayload(
+		stubContext({
+			operationMode: 'text_to_video',
+			modelVariant: 'seedance_2_0',
+			prompt: 'ocean waves',
+			execution_mode: 'economy_rail',
+		}),
+		0,
+		'hotCoffe',
+		'createVideo',
+	);
+	assert.equal(ok.execution_mode, 'economy_rail');
+
+	const explicitDirect = buildPayload(
+		stubContext({
+			prompt: 'portrait study',
+			model_name: 'mist',
+			execution_mode: 'direct',
+			seed: null,
+		}),
+		0,
+		'jupiter',
+		'omniImage',
+	);
+	assert.equal(explicitDirect.execution_mode, undefined);
+	assert.equal(explicitDirect.model_name, 'mist');
+	assert.equal('seed' in explicitDirect, false);
+
+	assert.throws(
+		() =>
+			buildPayload(
+				stubContext({
+					prompt: 'portrait study',
+					payloadJson: JSON.stringify({ reference_images: ['http://127.0.0.1/private.png'] }),
+				}),
+				0,
+				'jupiter',
+				'gptImageCodex',
+			),
+		/Local media URLs are not allowed/,
+	);
+
+	assert.throws(
+		() =>
+			buildPayload(
+				stubContext({
+					operationMode: 'video_extend',
+					modelVariant: 'seedance_2_0',
+					prompt: 'extend clip',
+					execution_mode: 'economy_rail',
+				}),
+				0,
+				'hotCoffe',
+				'createVideo',
+			),
+		/video_extend is not supported on economy_rail/,
+	);
+
+	const props = new FrankLab().description.properties;
+	const execProps = props.filter((p) => p.name === 'execution_mode');
+	for (const execProp of execProps) {
+		const res = execProp.displayOptions?.show?.resource?.[0];
+		if (['jupiter', 'mars', 'saturn', 'hotCoffe'].includes(res)) {
+			assert.deepEqual(
+				execProp.options.map((o) => o.value),
+				['', 'economy_rail'],
+			);
+		}
+	}
+	const omniModelName = props.find(
+		(p) => p.name === 'model_name' && p.displayOptions?.show?.resource?.[0] === 'jupiter',
+	);
+	assert.deepEqual(omniModelName.displayOptions.show.operation, ['omniImage']);
+	const byResource = Object.fromEntries(execProps.map((p) => [p.displayOptions.show.resource[0], p.displayOptions.show.operation]));
+	assert.deepEqual(byResource.jupiter, ['omniImage', 'seedreamImage', 'geminiImage']);
+	assert.deepEqual(byResource.mars, ['textToVideo', 'imageToVideo']);
+	assert.deepEqual(byResource.saturn, ['video', 'turboTextToVideo', 'turboImageToVideo']);
+	assert.deepEqual(byResource.hotCoffe, ['createVideo']);
+	assert.equal(byResource.omni, undefined);
+	assert.equal(byResource.moon, undefined);
 });
 
 
