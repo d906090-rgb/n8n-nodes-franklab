@@ -19,6 +19,7 @@ Only the contents of `integrations/n8n-nodes-franklab` should be copied into tha
 - `LICENSE`
 - `PUBLIC_REPO.md`
 - `README.md`
+- `assets/**`
 - `credentials/**`
 - `eslint.config.mjs`
 - `examples/**`

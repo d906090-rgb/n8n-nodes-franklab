@@ -1,280 +1,272 @@
-# @apergrex/n8n-nodes-franklab
+<div align="center">
 
-Official FrankLab community nodes for n8n.
+<img src="https://raw.githubusercontent.com/d906090-rgb/n8n-nodes-franklab/main/assets/hero-banner.svg" alt="FrankLab for n8n by Apergrex" width="100%" />
 
-FrankLab is a first-party media automation API for image processing, video post-production, audio processing, voice generation, dubbing, social publishing, and content credential profile management. This package integrates one service: the Apergrex / FrankLab API at `https://apergrex.ru/franklab/api` (or `https://franklab.ru/franklab/api`).
+<br />
 
-## What This Package Contains
+[![npm version](https://img.shields.io/npm/v/@apergrex/n8n-nodes-franklab?color=14b8a6&label=npm&logo=npm)](https://www.npmjs.com/package/@apergrex/n8n-nodes-franklab)
+[![CI](https://img.shields.io/github/actions/workflow/status/d906090-rgb/n8n-nodes-franklab/ci.yml?branch=main&label=CI&logo=github)](https://github.com/d906090-rgb/n8n-nodes-franklab/actions/workflows/ci.yml)
+[![SLSA Provenance](https://img.shields.io/badge/SLSA-Provenance%20Verified-f6c453?logo=sigstore&logoColor=white)](https://www.npmjs.com/package/@apergrex/n8n-nodes-franklab)
+[![Zero Runtime Deps](https://img.shields.io/badge/dependencies-0%20runtime-10b981)](./package.json)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D20.19-339933?logo=node.js&logoColor=white)](./package.json)
+[![License: MIT](https://img.shields.io/badge/License-MIT-38bdf8.svg)](./LICENSE)
 
-This repository is the public n8n connector package only. It contains:
+**Official [Apergrex](https://apergrex.ru) / [FrankLab](https://franklab.ru) community node package for [n8n](https://n8n.io).**  
+One unified node · **30 media & AI modules** · **0 runtime dependencies** · Server-side atomic billing · Signed SLSA provenance.
 
-- A single unified **FrankLab** action node (`@apergrex/n8n-nodes-franklab.frankLab`) exposing all 30 modules as top-level `Resource` options: HOLST, KLEY, PLASTINKA, VOLNA, C2PA, SUFLER, TextSticker, ORKESTR, JUPITER, MARS, SATURN, MOON, VENUS, X, MiniMax, DOLA, Alibaba, OMNI, KUSOK, MERCURY, NEPTUNE, PLUTO, ARIES, TITAN, Hot Coffee, Social, FLUX, Narezka, VariantPack, and HeyGen Agent. Kling runs exclusively through the SATURN resource (Kling 3.0 Omni) and the MARS resource (Kling 3.0).
-- FrankLab API credential definition.
-- A small request client that calls the public FrankLab API with your API key.
-- Tests, examples, and GitHub Actions workflows for n8n community-node verification and npm provenance publishing.
+[Quick Start](#-60-second-quick-start) · [Capability Matrix](#-capability-matrix-30-resources) · [Starter Workflows](#-ready-to-import-starter-workflows) · [Operations Reference](#-operations-reference) · [Cookbook](https://franklab.ru/franklab/cookbook) · [Request API Key](#-api-key-and-price-list)
 
-It does not contain FrankLab backend source code, provider integrations, provider API keys, `.env` files, billing internals, partner-admin routes, database schema, MCP tooling, or private Make.com module sources.
+</div>
 
-## API Key And Price List
+---
 
-You need a FrankLab API key before these nodes can run jobs.
+## Overview
 
-To request an API key, current pricing, and onboarding details, contact:
+**`@apergrex/n8n-nodes-franklab`** connects your n8n workflows to the first-party **Apergrex / FrankLab** media automation platform (`https://apergrex.ru/franklab/api` and `https://franklab.ru/franklab/api`) for AI image generation, cinema-grade video synthesis, FFmpeg post-production, speech/music/dubbing, C2PA Content Credentials, and 14-network social publishing.
 
-- Email: `fedorchuk.a@apergrex.com`
-- Telegram: `@ReanimatorXP`
+### Why Teams Use FrankLab in n8n
 
-Please mention that you want to use `@apergrex/n8n-nodes-franklab` in n8n. FrankLab will provide the API key and the current price list or commercial terms for your use case.
+- **Single Unified `FrankLab` Node** (`@apergrex/n8n-nodes-franklab.frankLab`) — all **30 modules** live cleanly under `Resource → Operation` with context-aware fields and built-in `Wait for Completion` polling (including two-step Midjourney `MODAL` pause states).
+- **Zero Vendor Key Sprawl** — authenticate once with a single `FrankLab API` key; server-side atomic `reserve → confirm / refund` billing reports exact `final_cost_franks` per task.
+- **Economy Pool (`economy_rail`) Draft Routing** — switch supported `JUPITER`, `MARS`, `SATURN`, and `Hot Coffee` tasks between the primary route and the low-cost corporate draft pool with a single dropdown.
+- **Hardened for Verification** — `0` runtime dependencies, strict public `http(s)` SSRF guards, structured `NodeApiError` diagnostics, and GitHub Actions SLSA provenance verified by `@n8n/scan-community-package`.
 
-## Billing
+---
 
-The n8n package does not calculate prices, hold balances, or bill customers locally. Billing and access control happen on the FrankLab API side:
+## ⚡ 60-Second Quick Start
 
-1. n8n sends your API key with each request.
-2. FrankLab identifies the account, partner, or workspace behind that key.
-3. FrankLab validates access and available limits or balance.
-4. FrankLab creates the job and applies the server-side billing rules.
-5. Where supported, responses include cost fields such as `final_cost_franks`, `cost_currency`, `cost_status`, and `cost_unit`.
+### 1. Install in n8n
 
-For production use, request your API key and current price list before building workflows that generate paid media jobs.
-
-## Installation
-
-Install the package through n8n community nodes:
+Open **Settings → Community nodes → Install** in your n8n instance and enter:
 
 ```text
 @apergrex/n8n-nodes-franklab
 ```
 
-Follow the official [n8n community node installation guide](https://docs.n8n.io/integrations/community-nodes/installation/) if your n8n instance has not installed community nodes before.
+*(New to community nodes? See the official [n8n community node installation guide](https://docs.n8n.io/integrations/community-nodes/installation/).)*
 
-## Credentials
+### 2. Configure Credentials
 
-Create a FrankLab credential in n8n after installation.
+Create a **FrankLab API** credential with two fields:
 
-The credential has two fields:
+| Field | Value |
+| :--- | :--- |
+| **API Key** | Your partner API key (see [API Key And Price List](#-api-key-and-price-list)) |
+| **Base URL** | `https://apergrex.ru/franklab/api` *(default)* or `https://franklab.ru/franklab/api` |
 
-- `API Key`: your FrankLab API key.
-- `Base URL`: fixed to `https://franklab.ru/franklab/api` or `https://franklab.ru`.
+> The public package enforces first-party production origins only and rejects custom hosts, `localhost`, loopback/link-local IPs, metadata endpoints, and local file paths.
 
-The public package does not support custom hosts, local hosts, DNS overrides, or test-host switches.
+### 3. Drop the `FrankLab` Node Into Your Canvas
 
-## Cookbook
+Add **FrankLab**, pick any **Resource** (e.g., `JUPITER`, `MARS`, `KLEY`, `VOLNA`, `Social`), choose an **Operation**, and enable **Wait for Completion** when you want automatic async task polling in a single step.
 
-Use the FrankLab Cookbook for workflow examples and field-level guidance:
+---
 
-https://franklab.ru/franklab/cookbook
+## 🧩 Capability Matrix (30 Resources)
 
-The cookbook includes Make.com and n8n editions. Use the platform switch in the cookbook to move between versions.
+| Domain | Resources | Flagship Capabilities |
+| :--- | :--- | :--- |
+| **Image Generation & Editing** | `JUPITER`, `FLUX`, `HOLST`, `Alibaba` | Full **16-action Midjourney** contour (`imagine`, `blend`, `describe`, `edits`, `upscale`, `variation`, `high-variation`, `low-variation`, `reroll`, `zoom`, `pan`, `inpaint` → `modal`, `remix-strong`, `remix-subtle`, `video`), GPT Image / Codex, Nano Banana / Gemini, Seedream, FLUX 3 Image/Klein, Qwen Image, Recraft, and 20+ `HOLST` / BRIA studio image tools |
+| **AI Cinema & Video** | `MARS`, `SATURN`, `MOON`, `OMNI`, `Hot Coffee`, `MiniMax`, `X` | Kling 3.0 (`MARS`) & Kling 3.0 Omni (`SATURN`), BytePlus Seedance (`MOON` / `Hot Coffee`), Google Gemini Omni & Veo 3 (`OMNI`), MiniMax H3, xAI Grok Imagine (`X`), Alibaba HappyHorse & WAN 3.0, plus `Economy Pool (Draft)` routing |
+| **Voice, Music, Dubbing & LLM** | `VOLNA`, `ORKESTR`, `NEPTUNE`, `PLUTO`, `DOLA` | ElevenLabs v4, Gemini 3.8 TTS, Seed Audio, Grok TTS/STT, voice cloning/design & dubbing (`VOLNA`), Suno v1/v2 + Google Lyria music (`ORKESTR`), video-synced foley (`PLUTO`), and MOON GPT structured JSON (`DOLA`) |
+| **FFmpeg Montage & Captions** | `KLEY`, `PLASTINKA`, `SUFLER`, `TextSticker`, `Narezka`, `VariantPack` | Hardware-pinned FFmpeg 8.1.2 stabilization, split-screen, slow-mo, HDR→SDR, ProRes/DNxHR, chroma key & BRIA video BG (`KLEY`), EBU R128 loudness & audio samples (`PLASTINKA`), burned-in styled captions (`SUFLER`), vertical smart clipping (`Narezka`), and 2–100 unique ad variants (`VariantPack`) |
+| **Avatars & Multi-Element** | `HeyGen Agent`, `VENUS`, `MERCURY`, `KUSOK`, `TITAN`, `ARIES` | Prompt-to-avatar Video Agent (`HeyGen Agent`), talking-portrait synthesis (`VENUS`), lip-sync (`MERCURY`), reusable character/voice libraries & Moon H5 verification (`KUSOK`), staged multi-element composition (`TITAN`), and historical try-on status (`ARIES`) |
+| **Social Publishing & Trust** | `Social`, `C2PA` | Schedule, pre-moderate, multipost, and read analytics across **14 social platforms** (`YouTube`, `Instagram`, `TikTok`, `Telegram`, `VK`, `Facebook`, `Threads`, `Pinterest`, `LinkedIn`, `Bluesky`, `WordPress`, `OK`, `Yandex Zen`, `MAX`) + synchronous free **C2PA Content Credentials** verification & signing profiles |
 
-## Operations
+---
 
-### HOLST
+## 🚀 Ready-to-Import Starter Workflows
 
-- Submit an image processing job.
-- Poll an image job status.
-- Supported image operations include resize, crop, format conversion, watermark, image overlay, text, filters, rotate, flip, blur, sharpen, mask, metadata read/write, collage, adjust, GPS metadata removal, and the BRIA operations (remove/replace background, erase foreground, erase by text, product lifestyle by text, product cutout).
+Download any template from [`examples/`](./examples) and import it into n8n via **Workflows → Import from File**:
 
-### KLEY
+| Workflow Template | Resources Used | What It Automates |
+| :--- | :--- | :--- |
+| [`midjourney-imagine-upscale-video.workflow.json`](./examples/midjourney-imagine-upscale-video.workflow.json) | `JUPITER` | Generates a 16:9 Midjourney v8.2 grid (`imagine`), upscales tile `U1` (`upscale`), and animates it into an MP4 (`midjourneyVideo`) |
+| [`ugc-product-reels-pipeline.workflow.json`](./examples/ugc-product-reels-pipeline.workflow.json) | `MARS` → `KLEY` | Synthesizes a 9:16 commercial product video in Kling 3.0 and normalizes final delivery geometry to `1080×1920` |
+| [`ai-voiceover-video-assembly.workflow.json`](./examples/ai-voiceover-video-assembly.workflow.json) | `VOLNA` → `PLASTINKA` | Generates expressive neural voiceover audio and mixes/fits the track onto a target video |
+| [`seedance-carousel-to-video.workflow.json`](./examples/seedance-carousel-to-video.workflow.json) | `JUPITER` → `Hot Coffee` | Creates a product keyframe image and animates it into a Seedance motion clip |
+| [`moon-text-to-video.workflow.json`](./examples/moon-text-to-video.workflow.json) | `MOON` | Single-node cinematic text-to-video generation with built-in completion polling |
+| [`saturn-turbo-video.workflow.json`](./examples/saturn-turbo-video.workflow.json) | `SATURN` | Fast Kling 3.0 Turbo text-to-video generation for rapid social story iteration |
+| [`holst-image-info.workflow.json`](./examples/holst-image-info.workflow.json) | `HOLST` | Inspects remote image metadata and dimensions for pre-flight pipeline routing |
 
-- Montage operations.
-- Video speed changes.
-- Subtitle rendering.
-- Video overlays.
-- Job status polling.
+For full field-by-field recipes (with a Make.com ↔ n8n switcher), open the **[FrankLab Cookbook](https://franklab.ru/franklab/cookbook)**.
 
-### PLASTINKA
+---
 
-- Audio processing.
-- Save a reusable audio sample from a public HTTPS URL.
-- List audio samples.
-- Apply a saved sample to a video.
-- Job status polling.
+## 🔑 API Key And Price List
 
-### VOLNA
+You need a FrankLab API key before these nodes can run jobs. To request an API key, current pricing, and onboarding details, contact:
 
-- Text to speech.
-- Text to dialogue, turbo TTS, and Google 3.1 TTS.
-- Speech to text.
-- Sound effects.
-- Audio isolation.
-- Voice clone.
-- Voice design.
-- Save a designed voice.
-- Dubbing.
-- Voice, model, usage, and task lookups.
+- **Email:** `fedorchuk.a@apergrex.com`
+- **Telegram:** `@ReanimatorXP`
 
-### C2PA
+Please mention that you want to use `@apergrex/n8n-nodes-franklab` in n8n. FrankLab will provide your API key and current commercial price list.
 
-- List signer profiles.
-- Generate a self-signed signer profile.
-- Revoke a signer profile.
-- Load profile options for other FrankLab nodes.
-- Verify Content Credentials on any asset by public HTTPS URL. The verdict is `Valid`,
-  `Trusted`, `Invalid`, `Unknown` or `NoManifest`; the check is synchronous and free, and
-  the asset is read and discarded rather than stored.
+### How Server-Side Billing Works
 
-Public verified v1 intentionally excludes private key import and private key rotation flows.
+The n8n package never calculates prices, holds balances, or stores billing logic locally:
 
-### SUFLER
+1. n8n sends your API key over HTTPS with each request.
+2. FrankLab authenticates the partner/workspace and enforces rate, model, and balance limits.
+3. FrankLab atomically reserves funds before upstream execution and confirms or refunds on terminal state.
+4. Supported responses return transparent cost telemetry: `final_cost_franks`, `cost_currency`, `cost_status`, and `cost_unit`.
 
-- Burn styled subtitles into a video with the v1 or v2 caption engine.
-- Optional template, language, transcription engine, highlight mode, platform, and safe zone preset.
-- Job status polling. Advanced styling fields (glossary, emphasis, render modes, translation) go through `Additional JSON`.
+---
 
-### TextSticker
+## 📚 What This Package Contains
 
-- Overlay text, stickers, emojis, and images on a video.
-- Job status polling.
-- Studio option lists: fonts, stickers, emojis, subtitle templates, video effects, transitions, transition sounds, safe zone options, aspect ratios, resize presets.
+This repository is the **public n8n connector package only**:
 
-### ORKESTR
+- A single unified **FrankLab** action node (`@apergrex/n8n-nodes-franklab.frankLab`) exposing all 30 modules as top-level `Resource` options (`HOLST`, `KLEY`, `PLASTINKA`, `VOLNA`, `C2PA`, `SUFLER`, `TextSticker`, `ORKESTR`, `JUPITER`, `MARS`, `SATURN`, `MOON`, `VENUS`, `X`, `MiniMax`, `DOLA`, `Alibaba`, `OMNI`, `KUSOK`, `MERCURY`, `NEPTUNE`, `PLUTO`, `ARIES`, `TITAN`, `Hot Coffee`, `Social`, `FLUX`, `Narezka`, `VariantPack`, and `HeyGen Agent`). Kling runs exclusively through `SATURN` (Kling 3.0 Omni) and `MARS` (Kling 3.0).
+- `FrankLabApi` credential definition (`https://apergrex.ru/franklab/api` and `https://franklab.ru/franklab/api`).
+- A lightweight HTTP client using n8n's built-in request helper and structured `NodeApiError` reporting.
+- Unit/contract/security tests, starter workflows, and GitHub Actions workflows for community-node verification and SLSA provenance publishing.
 
-- V1 (Suno envelope): music, lyrics, style, persona, processing, visuals, and task status polling by poll kind.
-- V2: generate, extend, upload cover, upload extend, add instrumental, add vocals, replace section, mashup, lyrics, timestamped lyrics, separate vocals, generate MIDI, convert WAV, music video, cover image, boost style, generate persona, Lyria music (Google Lyria), and task status.
-- V1 submits do not auto-poll; use `Get Task Status` with the matching poll kind. V2 submits support `Wait for Completion`.
+It does **not** contain FrankLab backend source code, upstream provider integrations or keys, `.env` files, billing internals, partner-admin routes, database schemas, MCP servers, or private Make.com module sources.
+
+---
+
+## 🛠 Operations Reference
+
+Expand any domain below for module-level operation details:
+
+<details open>
+<summary><strong>1. Image Generation &amp; Studio Processing (JUPITER · FLUX · HOLST · Alibaba)</strong></summary>
 
 ### JUPITER
-
-- Generate images with omni-image (generate/edit modes, quality, output format, aspect ratio, series), Google Gemini / Nano Banana, GPT Image 2 / Codex, Seedream, or the full 16-action Midjourney contour (`imagine`, `blend`, `describe`, `edits`, `upscale`, `variation`, `high-variation`, `low-variation`, `reroll`, `zoom`, `pan`, `inpaint`, `modal`, `video`, `remix-strong`, `remix-subtle`) plus Midjourney image-to-video (`midjourneyVideo`).
+- Generate images with `omniImage` (generate/edit modes, quality, output format, aspect ratio, series), Google Gemini / Nano Banana (`geminiImage`), GPT Image 2 / Codex (`gptImageCodex`), Seedream (`seedreamImage`), or the full **16-action Midjourney** contour (`imagine`, `blend`, `describe`, `edits`, `upscale`, `variation`, `high-variation`, `low-variation`, `reroll`, `zoom`, `pan`, `inpaint`, `modal`, `video`, `remix-strong`, `remix-subtle`) plus Midjourney image-to-video (`midjourneyVideo`).
 - Optional `Economy Pool (Draft)` (`economy_rail`) execution route on `omniImage`, `seedreamImage`, and `geminiImage` (also available on `MARS` text/image-to-video, `SATURN` video/turbo, and `Hot Coffee` `createVideo`).
-- Recraft tasks (create + status) for background removal and similar image operations.
-- Task status polling per endpoint, including `grid_image_url`, `images`, `videos`, `prompts`, `buttons`, and two-step `modal_ready` (`modal`) workflows.
-
-### MARS
-
-- Text to video and image to video (image passed as a public URL in the `image` field).
-- Video effects (`effect_scene`, `effect`, `image`, optional `image_tail`) and motion control (reference frame + video + duration).
-- Per-endpoint task status polling.
-
-### SATURN
-
-- SATURN (Kling 3.0 Omni) video generation and SATURN Turbo text/image to video. Kling traffic runs only here and in MARS (Kling 3.0).
-- Per-endpoint task status polling. The Google-backed omni video routes live in the OMNI node.
-
-### MOON
-
-- Submit cinematic video tasks (text/image/reference to video, video edit/extend) with model, duration, ratio, and resolution presets.
-- Estimate the cost of a task before submitting.
-- Task status polling.
-
-### VENUS
-
-- Generate talking-avatar videos from a portrait image plus an audio URL or audio id.
-- Task status polling.
-
-### X
-
-- Generate videos with xAI Imagine (Grok text/reference/edit/extend/single-image modes).
-- Generate images with xAI Imagine.
-- Per-endpoint task status polling.
-
-### MiniMax
-
-- Submit MiniMax H3 video tasks with idempotency keys, scenario, resolution, duration, ratio, and stored-file first frames.
-- Mint idempotency keys, list video tasks (with `page_num`/`page_size` pagination), and cancel or delete tasks by task ID.
-- Task status polling (long-poll `wait_seconds` is not used; standard polling applies).
-
-### DOLA
-
-- Generate text (and structured JSON with `json_object`/`json_schema` response formats) with MOON GPT models.
-- Async mode returns a billing task id you can poll with `Get Task`.
-- Import files from public URLs, list files, get a file, delete a file, and list models.
-- Streaming generation and direct multipart file upload are not part of the public package.
-
-### OMNI
-
-- Google-backed video generation (distinct provider from Kling-backed SATURN): Gemini Omni Flash and Omni Flash 1.1, Veo 3 and Veo 3 Fast.
-- Text/image/reference to video plus edit and extend operations with model, duration, resolution, and aspect ratio presets.
-- The v1 omni-video route and the Google subscription rails (`videos/google-sub`, `images/google-sub`) with per-rail status polling.
-- Provider info lookup and task status polling.
-
-### KUSOK
-
-- Element library: create (sync and async), list, get, delete.
-- Portrait/image recognition (sync and async) with async task polling.
-- Voice library: create, list, get, delete, and preset voices.
-- Requires a Kusok-capable partner API key; legacy keys are rejected server-side.
-
-### MERCURY
-
-- Lip-sync a video to speech audio (compat and advanced modes).
-- Face identification on images.
-- Per-endpoint task status polling.
-
-### NEPTUNE
-
-- Generate speech from text with optional voice and model.
-- Voice list lookup and task status polling.
-
-### PLUTO
-
-- Generate audio from a text prompt or produce audio for an existing video.
-- Per-endpoint task status polling.
-
-### ARIES
-
-- Kolors virtual try-on task status polling. New try-on submissions are retired server-side (the route answers 410 Gone); use Get Status for tasks submitted earlier.
-
-### TITAN
-
-- Staged multi-element video composition: initialize, add, delete, clear, and preview element selections, then create the video.
-- Task list and task status polling.
-
-### Hot Coffee
-
-- Generate images and Seedance videos (ByteDance ModelArk) with operation, model variant, resolution, duration, and ratio presets.
-- Per-surface task status polling.
-
-### Alibaba
-
-- Generate images with Alibaba Z-Image (synchronous), plus a Qwen operation toggle for
-  text-to-image and image edit (1-3 FrankLab stored-file IDs).
-- Submit HappyHorse videos (text/image to video) and estimate task cost before submitting.
-- Pick the video model: the default HappyHorse 1.1 body, WAN 3.0 Video, or an explicit
-  HappyHorse 1.1 text-to-video / image-to-video. WAN 3.0 additionally exposes audio,
-  prompt-extension and watermark toggles, a last-frame asset on image-to-video, and a
-  1-10 reference-image list on reference-to-video (HappyHorse rejects that operation).
-- Image-to-video takes a full first-frame asset descriptor (stored file ID, URL, MIME
-  type, width, height, size in bytes) on both models. The frame must already be uploaded
-  to FrankLab; an external URL is rejected.
-- Task status polling.
-- Availability depends on the FrankLab server-side Alibaba rollout flag; requests fail closed until it is enabled for your key.
-
-### Social
-
-- Publish, schedule, or pre-moderate posts across 14 social networks (`youtube`, `instagram`, `tiktok`, `facebook`, `threads`, `pinterest`, `telegram`, `vk`, `linkedin`, `bluesky`, `wordpress`, `ok`, `yandex_zen`, `max`).
-- Multipost submission with `Idempotency-Key`, release management (`list`, `get`, `edit`, `cancel`, `retry`, `delete`, `remote_edit`, `remote_delete`), analytics insights, and account/board/channel/brand pickers.
+- Recraft tasks (`recraftImage` + status) and legacy Youchuan Midjourney endpoints preserved for backward compatibility.
+- Per-endpoint status polling returning `grid_image_url`, `images`, `videos`, `prompts`, `buttons`, and two-step `modal_ready` (`modal`) states.
 
 ### FLUX
-
 - Generate, edit, continue, and draft-enhance FLUX 3 Video (`t2v`, `i2v`, `v2v`, `draft_enhance`, `edit`) and FLUX 3 Image / Klein tasks with pre-run quotes, availability probes, and status polling.
 
-### Narezka
+### HOLST
+- Submit and poll studio image processing jobs: resize, crop, format conversion, watermark, image overlay, text, filters, rotate, flip, blur, sharpen, mask, metadata read/write, collage, adjust, GPS metadata removal, and BRIA operations (remove/replace background, erase foreground, erase by text, product lifestyle by text, product cutout).
 
-- Cut long videos into vertical clips or highlight compilations with pre-run cost estimation, source URL import, `Idempotency-Key` headers, and job status polling.
+### Alibaba
+- Generate images with Alibaba Z-Image (synchronous), Qwen Image 3.0 / Pro (`Text to Image` & `Image Edit` with 1–3 stored-file IDs), and WAN 2.7 Image Pro.
+- Submit HappyHorse 1.1 and WAN 3.0 Video tasks (text/image/reference/keyframe/edit/extend) with pre-run cost estimation, audio/watermark/prompt-extension toggles, and status polling.
+
+</details>
+
+<details>
+<summary><strong>2. AI Cinema &amp; Video Synthesis (MARS · SATURN · MOON · OMNI · Hot Coffee · MiniMax · X)</strong></summary>
+
+### MARS
+- Kling 3.0 text-to-video and image-to-video (with optional `Economy Pool (Draft)` route), video effects (`effect_scene`, `effect`, `image`, optional `image_tail`), motion control (reference frame + video + duration), and status polling.
+
+### SATURN
+- SATURN (Kling 3.0 Omni) video generation, SATURN Turbo text/image-to-video, video extend (`/v1/videos/video-extend`), and multi-image-to-video (`/v1/videos/multi-image2video`) with per-endpoint polling.
+
+### MOON
+- Submit cinematic BytePlus Seedance video tasks (text/image/reference-to-video, video edit/extend) with model, duration, ratio, and resolution presets, pre-run cost estimates, and task polling.
+
+### OMNI
+- Google-backed video generation (Gemini Omni Flash 1.1 / 1.2, Veo 3 / Veo 3 Fast): text/image/reference-to-video, edit/extend, quotes, batch creation & batch polling (`partial_success`-aware), plus Google subscription rails (`videos/google-sub`, `images/google-sub`).
+
+### Hot Coffee
+- Generate images and Seedance videos (`createVideo` with optional `economy_rail` draft route) with operation, model variant, resolution, duration, and ratio presets plus per-surface status polling.
+
+### MiniMax
+- Submit MiniMax H3 video tasks with idempotency keys, scenario, resolution, duration, ratio, and stored-file first frames; mint idempotency keys, list paginated tasks, and cancel/delete tasks.
+
+### X
+- Generate videos (text/reference/edit/extend/single-image) and images with xAI Grok Imagine plus per-endpoint task status polling.
+
+</details>
+
+<details>
+<summary><strong>3. Voice, Music, Dubbing &amp; Text (VOLNA · ORKESTR · NEPTUNE · PLUTO · DOLA)</strong></summary>
+
+### VOLNA
+- Text-to-speech, dialogue TTS, turbo TTS, ElevenLabs v4 / v4 Turbo, Google Gemini 3.1 & 3.8 TTS, BytePlus Seed Audio 1.0, xAI Grok TTS/STT, Google Gemini 3.5 STT, sound effects, audio isolation, voice clone, voice design, dubbing, and voice/model/usage lookups.
+
+### ORKESTR
+- V1 (Suno envelope) and V2 (`Wait for Completion`-capable): music generation, extend, upload cover/extend, add instrumental/vocals, replace section, mashup, lyrics & timestamped lyrics, vocal separation, MIDI & WAV conversion, music video, cover image, style boost, persona, and Google Lyria music.
+
+### NEPTUNE
+- Generate speech from text with optional voice/model selection, voice list lookup, and status polling.
+
+### PLUTO
+- Generate standalone audio from text prompts or video-synced foley/soundtracks for existing videos with status polling.
+
+### DOLA
+- Generate text and structured JSON (`json_object` / `json_schema`) with MOON GPT models, poll async billing task IDs, import files from public URLs, and list/get/delete files and models.
+
+</details>
+
+<details>
+<summary><strong>4. FFmpeg Post-Production, Captions &amp; Variants (KLEY · PLASTINKA · SUFLER · TextSticker · Narezka · VariantPack)</strong></summary>
+
+### KLEY
+- FFmpeg 8.1.2 montage operations: stabilize, scene list, QC report, split screen (2–4 sources), slow motion, denoise, HDR→SDR, animated loop (WebP/AVIF), mezzanine master (ProRes/DNxHR), round, background removal, chroma key, waveform, BRIA video replace-BG / erase-object, quality compare, speed changes, subtitle rendering, and overlays.
+
+### PLASTINKA
+- Audio post-production (EBU R128 loudness analysis, spectrogram, waveform image, Chromaprint fingerprint, dialogue enhancement, stereo tools, ALAC/Opus conversion, quality compare) plus reusable audio sample management (`save`, `list`, `applySample`).
+
+### SUFLER
+- Burn styled subtitles into video with the v1 or v2 caption engine, templates, language/transcription options, highlight modes, and platform safe-zone presets.
+
+### TextSticker
+- Overlay text, stickers, emojis, and images onto video, plus studio catalog lookups (fonts, stickers, emojis, subtitle templates, effects, transitions, safe zones, aspect ratios).
+
+### Narezka
+- Smart vertical clipping (`clips`) and highlight compilations (`compilation`) from long-form videos with cost estimation, source URL import, and `Idempotency-Key` protection.
 
 ### VariantPack
+- Batch-generate 2–100 uniquely varied video copies with presets (`light`, `standard`, `stealth`, `speech`, `balanced`, `deep`, `custom`), AI captions, cost estimates, and brand/library pickers.
 
-- Generate 2–100 uniquely varied video copies with presets (`light`, `standard`, `stealth`, `speech`, `balanced`, `deep`, `custom`), AI captions, cost estimates, and brand/library pickers.
+</details>
+
+<details>
+<summary><strong>5. Avatars, Libraries &amp; Composition (HeyGen Agent · VENUS · MERCURY · KUSOK · TITAN · ARIES)</strong></summary>
 
 ### HeyGen Agent
+- Prompt-to-avatar video generation with 2-stage session→video polling, interactive Video Agent chat sessions, resource inspection, session stop, and pickers for saved credentials, avatar looks, voices, styles, brand kits, and glossaries.
 
-- Generate AI avatar videos from prompts (with 2-stage session→video polling), run interactive Video Agent chat sessions, inspect resources, stop sessions, and list saved credentials, avatar looks, voices, styles, brand kits, and glossaries.
+### VENUS
+- Generate talking-avatar videos from a portrait image plus an audio URL or audio ID with status polling.
+
+### MERCURY
+- Lip-sync video to speech audio (compat and advanced modes) and run face identification on images.
+
+### KUSOK
+- Reusable element library (`create`, `list`, `get`, `delete`), portrait recognition, voice library & presets, and Moon H5 verification / Seedance asset operations (`moonOperation`).
+
+### TITAN
+- Staged multi-element video composition (`initialize`, `add`, `delete`, `clear`, `preview`, `create`) with task list and status polling.
+
+### ARIES
+- Poll historical Kolors virtual try-on tasks (new submissions return `410 Gone` server-side).
+
+</details>
+
+<details>
+<summary><strong>6. Omnichannel Social Publishing &amp; C2PA Credentials (Social · C2PA)</strong></summary>
+
+### Social
+- Publish, schedule, or pre-moderate posts across 14 social networks (`youtube`, `instagram`, `tiktok`, `facebook`, `threads`, `pinterest`, `telegram`, `vk`, `linkedin`, `bluesky`, `wordpress`, `ok`, `yandex_zen`, `max`), multipost with `Idempotency-Key`, manage releases (`list`, `get`, `edit`, `cancel`, `retry`, `delete`, `remote_edit`, `remote_delete`), and fetch analytics insights.
+
+### C2PA
+- Synchronously verify Content Credentials on any public HTTPS media URL (`Valid`, `Trusted`, `Invalid`, `Unknown`, `NoManifest` — free, stateless, zero storage) and manage self-signed C2PA signer profiles (`list`, `generate`, `revoke`).
+
+</details>
+
+---
 
 ## Usage Notes
 
-All media inputs in public v1 are URL-only. Use public `http` or `https` URLs. Local URLs such as localhost, loopback/link-local IPs, metadata hosts, and file paths are rejected.
+- **URL-Only Media Policy:** Pass public `http` or `https` URLs (or partner-scoped stored file IDs where supported). Localhost, private/link-local IPs, cloud metadata endpoints, and local file paths are blocked client- and server-side.
+- **Polling & Two-Step Modal Flows:** Enable `Wait for Completion` on async submit operations to receive the final asset automatically. For two-step Midjourney `inpaint`, the first node returns `status: "modal"` (`modal_ready: true`), allowing the next node to submit `modal` with your `mask_url` and `prompt`.
+- **Advanced Parameters:** Use `Additional JSON` for optional long-tail fields. Never place secrets, PEM keys, or upstream credentials inside workflow fields.
 
-Most submit operations return a `taskId`. Enable `Wait for Completion` to poll until FrankLab returns a terminal status, or use the matching status operation later in the workflow.
+---
 
-For advanced request fields, use `Additional JSON`. Keep media URLs public and never paste secrets, private keys, PEM files, or provider credentials into workflow fields.
+## Development & Verification
 
-Multipart upload endpoints (MiniMax media upload, DOLA direct file upload) are intentionally not exposed: pass media by public URL, data URL, or partner-scoped stored file id instead, matching the URL-only media policy of the package.
-
-## Development
-
-The public repository is self-contained but deliberately separates publishable package dependencies from its private build toolchain. From a clean clone, install both deterministic contours before running package commands:
+This repository separates the zero-dependency published package from its `private: true` build/lint toolchain (`tooling/`), which is excluded from the npm tarball:
 
 ```bash
 npm ci --ignore-scripts
@@ -284,55 +276,27 @@ npm test
 npm run scan
 ```
 
-`tooling` is marked `private:true`; it exists only for build, lint, test, and release commands. The publishable package remains override-free with no runtime dependencies, and the private tooling directory is excluded from the npm tarball.
+- **Compatibility:** Built with `@n8n/node-cli@0.46.2` on Node.js 24; supports `node >=20.19` and has `0` runtime dependencies.
+- **Provenance & Scanner:** Published exclusively via GitHub Actions (`publish.yml`) from [`d906090-rgb/n8n-nodes-franklab`](https://github.com/d906090-rgb/n8n-nodes-franklab) with signed SLSA provenance and verified via `npm run scan:published` (`npx @n8n/scan-community-package @apergrex/n8n-nodes-franklab`).
 
-## Compatibility
-
-The package is built with the official `n8n-node` tool. The private development contour currently pins `@n8n/node-cli@0.46.2` for reproducible community verification.
-
-Development and CI use Node.js 24. The package declares `node >=20.19` because the current n8n toolchain requires a Node 20 build with modern ESM interop or newer.
-
-The verified package has no runtime dependencies. Development dependencies are used only for build, lint, release, and local tests.
-
-## Verification
-
-- `npm run tooling:ci`: clean-install the private development toolchain and link its canonical eslint export into the public development tree.
-- `npm run build`: compile and copy n8n node assets.
-- `npm test`: run package metadata, registry, client, and leakage tests.
-- `npm run scan`: run local n8n lint plus `npm pack --dry-run`.
-- `npm run scan:published`: run the official n8n published-package scanner after the package is published to npm with provenance.
-
-## Public Release Repository
-
-This repository is intended to be public so npm provenance can be verified by GitHub Actions. The npm package is published from this public package repository, not from the private FrankLab monorepo.
-
-Recommended release flow:
-
-1. Merge package changes in the private FrankLab monorepo.
-2. Export or sync only `integrations/n8n-nodes-franklab` into the public `d906090-rgb/n8n-nodes-franklab` repository.
-3. Review the public repository file list before pushing, including the tracked private tooling manifest and lockfile but no `node_modules`.
-4. From a clean public checkout, run `npm ci --ignore-scripts`, `npm run tooling:ci`, build, test, scan, and inspect the dry-run tarball for zero tooling paths.
-5. Push the release tag to the public repository.
-6. Let the public GitHub Actions publish workflow run `npm run release` with npm provenance.
-7. Verify the published package with `npm run scan:published`.
+---
 
 ## Resources
 
-- [FrankLab Cookbook](https://franklab.ru/franklab/cookbook)
-- [n8n community nodes documentation](https://docs.n8n.io/integrations/#community-nodes)
-- [Submit n8n community nodes](https://docs.n8n.io/integrations/creating-nodes/deploy/submit-community-nodes/)
-- [n8n community node verification guidelines](https://docs.n8n.io/integrations/creating-nodes/build/reference/verification-guidelines/)
-- [Public package repository](https://github.com/d906090-rgb/n8n-nodes-franklab)
+- [Apergrex Platform](https://apergrex.ru)
+- [FrankLab Cookbook (n8n & Make.com Editions)](https://franklab.ru/franklab/cookbook)
+- [npm Package (`@apergrex/n8n-nodes-franklab`)](https://www.npmjs.com/package/@apergrex/n8n-nodes-franklab)
+- [n8n Community Nodes Documentation](https://docs.n8n.io/integrations/#community-nodes)
+
+---
 
 ## Version History
 
-- `0.5.0`: Added the full 16-action Midjourney contour (`midjourneyImage`, `getMidjourneyImageStatus`, `midjourneyVideo`, `getMidjourneyVideoStatus`) on `JUPITER`, optional `Economy Pool (Draft)` (`economy_rail`) routing on `JUPITER`, `MARS`, `SATURN`, and `Hot Coffee` (`createVideo`), `imageUrl`/`video_url`/`videos`/`prompts`/`buttons`/`modal_ready` output extraction without `data.result` shadowing, `modal` terminal polling support, and `string[]` `image_urls` / `mask_url` SSRF validation.
-- `0.4.0`: Consolidated all 30 modules into a single unified `FrankLab` action node (`Resource` → `Operation`) and wrapped HTTP/API errors in `NodeApiError` (preserving status code, response body, and headers) to satisfy n8n Verified Community Node review requirements.
-- `0.3.1`: n8n Verified Community Node scanner compliance — organized operations into `Resource` groups across 11 nodes (`DOLA`, `FLUX`, `HeyGen Agent`, `JUPITER`, `KUSOK`, `MARS`, `OMNI`, `SATURN`, `Social`, `TextSticker`, `TITAN`) and tightened `VOLNA` operation labels so `@n8n/scan-community-package` passes with 0 errors and 0 warnings (all operation values unchanged for full workflow backward compatibility).
-- `0.3.0`: Make.com P0 parity wave + Apergrex production origin (`https://apergrex.ru/franklab/api`) — 5 new nodes (`Social`, `FLUX`, `Narezka`, `VariantPack`, `HeyGen Agent` -> 30 nodes total) and Make-parity upgrades across `JUPITER` (Nano Banana, GPT Image 2 / Codex, Midjourney), `SATURN` (video extend, multi-image), `VOLNA` (ElevenLabs v4/v4-turbo, Gemini 3.8 TTS, Seed Audio 1.0, xAI TTS/STT, Google STT, voice RPCs), `OMNI` (`omni_1_2`, quotes, batches), `ALIBABA` (new image/video models and operations), `KLEY` (SPEKTR/quality-compare montage ops), `PLASTINKA` (`applySample`, `quality_compare`), and `KUSOK` (Moon H5 verification & Seedance assets).
-- `0.2.4`: ALIBABA video model selection (HappyHorse 1.1 / WAN 3.0 Video) with the WAN 3.0 audio, prompt-extension, watermark, last-frame and reference-image fields, a first-frame asset descriptor for image-to-video, and a Qwen text-to-image / image-edit toggle; C2PA gains a `Verify Asset` operation that returns a Content Credentials verdict for a public HTTPS URL.
-- `0.2.3`: KLEY and PLASTINKA capability operations on the pinned FFmpeg 8.1.2 build — stabilize, scene list, QC report, split screen, slow motion, denoise, HDR→SDR, animated loop, mezzanine master; analyze, spectrogram, waveform image, fingerprint, enhance dialogue, stereo tools, plus ALAC/Opus convert targets.
-- `0.2.0`: Full Make-parity wave — 20 new nodes (SUFLER, TextSticker, ORKESTR, JUPITER, MARS, SATURN, MOON, VENUS, X, MiniMax, DOLA, Alibaba, OMNI, KUSOK, MERCURY, NEPTUNE, PLUTO, ARIES, TITAN, Hot Coffe), Recraft/BRIA operations, Kling element/voice library in KUSOK, DELETE support, `billing_task_id` polling, and a standalone `scripts.test` rewrite in the public-mirror export.
-- `0.1.2`: Public-repo lint fix for hidden optional node parameters.
-- `0.1.1`: npm author email metadata.
-- `0.1.0`: First-wave package scaffold for HOLST, KLEY, PLASTINKA, VOLNA, and C2PA.
+- **`0.5.0`**: Added the full 16-action Midjourney contour (`midjourneyImage`, `getMidjourneyImageStatus`, `midjourneyVideo`, `getMidjourneyVideoStatus`) on `JUPITER`, optional `Economy Pool (Draft)` (`economy_rail`) routing on `JUPITER`, `MARS`, `SATURN`, and `Hot Coffee` (`createVideo`), unshadowed `imageUrl`/`video_url`/`videos`/`prompts`/`buttons`/`modal_ready` extraction, `modal` terminal polling support, and `string[]` `image_urls` / `mask_url` SSRF validation.
+- **`0.4.0`**: Consolidated all 30 modules into a single unified `FrankLab` action node (`Resource → Operation`) and wrapped HTTP/API errors in `NodeApiError` to satisfy n8n Verified Community Node review requirements.
+- **`0.3.1`**: Organized operations under `Resource` groups across multi-operation modules and refined `VOLNA` labels for `@n8n/scan-community-package` zero-warning compliance.
+- **`0.3.0`**: Make.com P0 parity wave (`Social`, `FLUX`, `Narezka`, `VariantPack`, `HeyGen Agent` + 8 module upgrades) and `https://apergrex.ru/franklab/api` production origin support.
+- **`0.2.4`**: `Alibaba` WAN 3.0 / Qwen Image fields and synchronous `C2PA` `Verify Asset` operation.
+- **`0.2.3`**: `KLEY` and `PLASTINKA` FFmpeg 8.1.2 post-production and EBU R128 analysis operations.
+- **`0.2.0`**: Full Make-parity wave adding 20 generation and utility modules.
+- **`0.1.0` – `0.1.2`**: Initial public scaffold (`HOLST`, `KLEY`, `PLASTINKA`, `VOLNA`, `C2PA`), metadata, and lint refinements.

@@ -1,0 +1,110 @@
+{
+	"name": "Apergrex — Midjourney Imagine to Upscale to Video (JUPITER)",
+	"nodes": [
+		{
+			"parameters": {},
+			"type": "n8n-nodes-base.manualTrigger",
+			"typeVersion": 1,
+			"position": [
+				140,
+				240
+			],
+			"id": "trigger-mj-pipeline",
+			"name": "Manual Trigger"
+		},
+		{
+			"parameters": {
+				"resource": "jupiter",
+				"operation": "midjourneyImage",
+				"operationMode": "imagine",
+				"prompt": "Architectural glass pavilion in an alpine pine forest at golden dusk, warm interior glow, photorealistic editorial photography",
+				"mjVersion": "v8.2",
+				"speed": "fast",
+				"size": "16:9",
+				"waitForCompletion": true
+			},
+			"type": "@apergrex/n8n-nodes-franklab.frankLab",
+			"typeVersion": 1,
+			"position": [
+				380,
+				240
+			],
+			"id": "jupiter-mj-imagine",
+			"name": "FrankLab JUPITER (Midjourney Imagine)"
+		},
+		{
+			"parameters": {
+				"resource": "jupiter",
+				"operation": "midjourneyImage",
+				"operationMode": "upscale",
+				"parent_task_id": "={{$json.taskId}}",
+				"index": 1,
+				"speed": "fast",
+				"waitForCompletion": true
+			},
+			"type": "@apergrex/n8n-nodes-franklab.frankLab",
+			"typeVersion": 1,
+			"position": [
+				640,
+				240
+			],
+			"id": "jupiter-mj-upscale",
+			"name": "FrankLab JUPITER (Midjourney Upscale U1)"
+		},
+		{
+			"parameters": {
+				"resource": "jupiter",
+				"operation": "midjourneyVideo",
+				"image_urls": [
+					"={{$json.imageUrl}}"
+				],
+				"prompt": "Slow cinematic drone push-in toward the illuminated glass pavilion, gentle mist drifting between pine trees",
+				"speed": "fast",
+				"waitForCompletion": true
+			},
+			"type": "@apergrex/n8n-nodes-franklab.frankLab",
+			"typeVersion": 1,
+			"position": [
+				900,
+				240
+			],
+			"id": "jupiter-mj-video",
+			"name": "FrankLab JUPITER (Midjourney Video)"
+		}
+	],
+	"connections": {
+		"Manual Trigger": {
+			"main": [
+				[
+					{
+						"node": "FrankLab JUPITER (Midjourney Imagine)",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"FrankLab JUPITER (Midjourney Imagine)": {
+			"main": [
+				[
+					{
+						"node": "FrankLab JUPITER (Midjourney Upscale U1)",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"FrankLab JUPITER (Midjourney Upscale U1)": {
+			"main": [
+				[
+					{
+						"node": "FrankLab JUPITER (Midjourney Video)",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		}
+	}
+}
