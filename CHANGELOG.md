@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.1 (2026-11-28)
+
+n8n Verified Community Node English-only compliance:
+
+- Translated two Russian module section comments in `nodes/shared/registry.ts` (`Social Networks` and `uniquification`) to English.
+- Translated the voiceover sample text in `examples/ai-voiceover-video-assembly.workflow.json` to English.
+- Added an automated metadata test guard ensuring zero non-Latin script characters appear in any source, documentation, or shipped example file.
+
 ## 0.5.0 (2026-11-25)
 
 Full 16-action Midjourney contour on `JUPITER` and Economy Pool (`economy_rail`) draft routing:

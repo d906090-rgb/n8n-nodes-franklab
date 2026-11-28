@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
+import path from 'node:path';
 import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
 
+const packageRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
 const toolingPackageJson = JSON.parse(await readFile(new URL('../tooling/package.json', import.meta.url), 'utf8'));
 const ciWorkflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
@@ -27,7 +30,7 @@ test('package metadata is eligible for n8n community verification', () => {
 	assert.deepEqual(packageJson.n8n.nodes, [
 		'dist/nodes/FrankLab/FrankLab.node.js',
 	]);
-	assert.equal(packageJson.version, '0.5.0');
+	assert.equal(packageJson.version, '0.5.1');
 	// Monorepo tree keeps the host-lock wrapper; the public-mirror export rewrites
 	// scripts.test to the standalone form, so both are valid depending on environment.
 	assert.ok(
@@ -82,4 +85,61 @@ test('public Undici acceptance cannot cover a vulnerable private tooling copy', 
 			`private tooling Undici must stay on a reviewed patched 7.x release (>=7.30.1): ${location}=${entry.version}`,
 		);
 	}
+});
+
+test('all source, documentation, workflow examples, and built dist files use English-only Latin script', async () => {
+	const nonLatinScript =
+		/\p{Script=Cyrillic}|\p{Script=Han}|\p{Script=Hiragana}|\p{Script=Katakana}|\p{Script=Hangul}|\p{Script=Arabic}|\p{Script=Hebrew}/u;
+	const textExt = /\.(?:ts|js|mjs|cjs|json|md|svg|ya?ml)$/i;
+
+	async function collectFiles(relDir) {
+		const absDir = path.join(packageRoot, relDir);
+		let entries;
+		try {
+			entries = await readdir(absDir, { withFileTypes: true });
+		} catch {
+			return [];
+		}
+		const out = [];
+		for (const entry of entries) {
+			const childRel = path.posix.join(relDir, entry.name);
+			if (childRel === 'dist/tooling' || entry.name === 'node_modules') continue;
+			if (entry.isDirectory()) {
+				out.push(...(await collectFiles(childRel)));
+			} else if (entry.isFile() && textExt.test(entry.name)) {
+				out.push(childRel);
+			}
+		}
+		return out;
+	}
+
+	const filesToScan = [
+		'package.json',
+		'README.md',
+		'CHANGELOG.md',
+		'PUBLIC_REPO.md',
+		...(await collectFiles('nodes')),
+		...(await collectFiles('credentials')),
+		...(await collectFiles('examples')),
+		...(await collectFiles('assets')),
+		...(await collectFiles('test')),
+		...(await collectFiles('dist')),
+	];
+
+	assert.ok(filesToScan.length >= 25, `expected >= 25 package files to scan, got ${filesToScan.length}`);
+	const violations = [];
+	for (const relPath of filesToScan) {
+		const content = await readFile(path.join(packageRoot, relPath), 'utf8');
+		const lines = content.split(/\r?\n/);
+		for (let i = 0; i < lines.length; i += 1) {
+			if (nonLatinScript.test(lines[i])) {
+				violations.push(`${relPath}:${i + 1}`);
+			}
+		}
+	}
+	assert.deepEqual(
+		violations,
+		[],
+		`n8n verification requires English-only UI text, comments, examples, and docs; found non-Latin script at: ${violations.join(', ')}`,
+	);
 });

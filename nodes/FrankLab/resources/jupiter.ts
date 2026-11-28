@@ -181,6 +181,183 @@ export const jupiterResource: FrankLabResourceDefinition = {
 		}
 	},
 	{
+		displayName: "Omni / Kling Model",
+		name: "model_name",
+		type: "options",
+		noDataExpression: true,
+		default: "jupiter-v1-5",
+		options: [
+			{
+				name: "GPT Image 2 (Mist)",
+				value: "mist",
+				action: "Use GPT Image 2"
+			},
+			{
+				name: "Kling 3.0 Omni Image (Jupiter V1.5)",
+				value: "jupiter-v1-5",
+				action: "Use Kling 3.0 Omni Image"
+			},
+			{
+				name: "Kling 3.0 Omni Image Pro (Jupiter V1.5 Pro)",
+				value: "jupiter-v1-5-pro",
+				action: "Use Kling 3.0 Omni Image Pro"
+			},
+			{
+				name: "Kling 4.0 Image — Standard (Jupiter V2)",
+				value: "jupiter-v2",
+				action: "Use Kling 4.0 Image Standard"
+			},
+			{
+				name: "Kling 4.0 Long Image (Jupiter V2 Long)",
+				value: "jupiter-v2-long",
+				action: "Use Kling 4.0 Long Image"
+			}
+		],
+		displayOptions: {
+			show: {
+				operation: [
+					"omniImage"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Kling 4.0 Result Type",
+		name: "kling4_result_type",
+		type: "options",
+		noDataExpression: true,
+		default: "single",
+		options: [
+			{ name: "Series (2–10 / Auto)", value: "series", action: "Generate a coherent image series" },
+			{ name: "Single (1–9 Images)", value: "single", action: "Generate independent images" }
+		],
+		displayOptions: {
+			show: {
+				operation: ["omniImage"],
+				model_name: ["jupiter-v2"]
+			}
+		}
+	},
+	{
+		displayName: "Series Amount",
+		name: "series_amount",
+		type: "options",
+		noDataExpression: true,
+		default: "auto",
+		options: [
+			{ name: "10", value: "10", action: "10 images in series" },
+			{ name: "2", value: "2", action: "2 images in series" },
+			{ name: "3", value: "3", action: "3 images in series" },
+			{ name: "4", value: "4", action: "4 images in series" },
+			{ name: "5", value: "5", action: "5 images in series" },
+			{ name: "6", value: "6", action: "6 images in series" },
+			{ name: "7", value: "7", action: "7 images in series" },
+			{ name: "8", value: "8", action: "8 images in series" },
+			{ name: "9", value: "9", action: "9 images in series" },
+			{ name: "Auto (Up to 10, Billed on Actual)", value: "auto", action: "Auto series count" }
+		],
+		displayOptions: {
+			show: {
+				operation: ["omniImage"],
+				model_name: ["jupiter-v2"],
+				kling4_result_type: ["series"]
+			}
+		}
+	},
+	{
+		displayName: "Kling 4.0 Long Skill",
+		name: "kling4_long_skill",
+		type: "options",
+		noDataExpression: true,
+		default: "ecommerce",
+		options: [
+			{ name: "E-Commerce Detail Page (1–3 Refs)", value: "ecommerce", action: "Generate ecommerce long image" },
+			{ name: "Webpage Layout (T2I/I2I)", value: "webpage", action: "Generate webpage long image" }
+		],
+		displayOptions: {
+			show: {
+				operation: ["omniImage"],
+				model_name: ["jupiter-v2-long"]
+			}
+		}
+	},
+	{
+		displayName: "Kling 4.0 Long Length",
+		name: "kling4_long_length",
+		type: "options",
+		noDataExpression: true,
+		default: "medium",
+		options: [
+			{ name: "Short", value: "short", action: "Short ecommerce detail page" },
+			{ name: "Medium", value: "medium", action: "Medium ecommerce detail page" },
+			{ name: "Long", value: "long", action: "Long ecommerce detail page" }
+		],
+		displayOptions: {
+			show: {
+				operation: ["omniImage"],
+				model_name: ["jupiter-v2-long"],
+				kling4_long_skill: ["ecommerce"]
+			}
+		}
+	},
+	{
+		displayName: "Reference Image URLs",
+		name: "reference_images",
+		type: "string",
+		default: "",
+		description: "Comma- or newline-separated public HTTPS URLs (up to 10 on jupiter-v2, 1–3 on jupiter-v2-long ecommerce)",
+		displayOptions: {
+			show: {
+				operation: ["omniImage"],
+				model_name: ["jupiter-v2", "jupiter-v2-long"]
+			},
+			hide: {
+				kling4_long_skill: ["webpage"]
+			}
+		}
+	},
+	{
+		displayName: "KUSOK Element IDs",
+		name: "element_ids",
+		type: "string",
+		default: "",
+		description: "Comma- or newline-separated image_refer element IDs (up to 10 combined with reference images)",
+		displayOptions: {
+			show: {
+				operation: ["omniImage"],
+				model_name: ["jupiter-v2"]
+			}
+		}
+	},
+	{
+		displayName: "Style Reference Image URL",
+		name: "style_refer_image_url",
+		type: "string",
+		default: "",
+		description: "Optional style_refer_image HTTPS URL for Kling 4.0 Long webpage skill",
+		displayOptions: {
+			show: {
+				operation: ["omniImage"],
+				model_name: ["jupiter-v2-long"],
+				kling4_long_skill: ["webpage"]
+			}
+		}
+	},
+	{
+		displayName: "Subject Reference Image URL",
+		name: "subject_refer_image_url",
+		type: "string",
+		default: "",
+		description: "Optional subject_refer_image HTTPS URL for Kling 4.0 Long webpage skill",
+		displayOptions: {
+			show: {
+				operation: ["omniImage"],
+				model_name: ["jupiter-v2-long"],
+				kling4_long_skill: ["webpage"]
+			}
+		}
+	},
+	{
 		displayName: "Gemini Model",
 		name: "model_id",
 		type: "options",
@@ -955,6 +1132,9 @@ export const jupiterResource: FrankLabResourceDefinition = {
 					"gptImageCodex",
 					"youchuanImage"
 				]
+			},
+			hide: {
+				model_name: ["jupiter-v2-long"]
 			}
 		}
 	},
@@ -999,6 +1179,9 @@ export const jupiterResource: FrankLabResourceDefinition = {
 					"omniImage",
 					"gptImageCodex"
 				]
+			},
+			hide: {
+				model_name: ["jupiter-v2", "jupiter-v2-long"]
 			}
 		}
 	},
@@ -1011,7 +1194,16 @@ export const jupiterResource: FrankLabResourceDefinition = {
 			show: {
 				operation: [
 					"omniImage"
+				],
+				model_name: [
+					"jupiter-v1-5",
+					"jupiter-v1-5-pro",
+					"jupiter-v2",
+					"mist"
 				]
+			},
+			hide: {
+				kling4_result_type: ["series"]
 			}
 		}
 	},

@@ -211,7 +211,7 @@ export const marsResource: FrankLabResourceDefinition = {
 		name: "image_tail",
 		type: "string",
 		default: "",
-		description: "Optional public http(s) URL of the tail frame image",
+		description: "Optional public http(s) URL of the tail/last frame image",
 		displayOptions: {
 			show: {
 				operation: [
@@ -221,10 +221,49 @@ export const marsResource: FrankLabResourceDefinition = {
 		}
 	},
 	{
+		displayName: "Tail / Last Frame Image URL",
+		name: "image_tail",
+		type: "string",
+		default: "",
+		description: "Optional public http(s) URL of the last frame image (Kling 4.0 mars-v2 or legacy Kling 2.5-3.0; Flash does not support last_frame)",
+		displayOptions: {
+			show: {
+				operation: [
+					"imageToVideo"
+				],
+				model: [
+					"",
+					"mars-v2",
+					"mars-v1-5",
+					"mars-v1",
+					"mars-v1-turbo"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Middle Frame URLs (Kling 4.0)",
+		name: "middle_frame_urls",
+		type: "string",
+		default: "",
+		description: "Optional comma or newline separated public http(s) URLs of middle keyframes (mars-v2 imageToVideo only; Flash does not support middle_frame)",
+		displayOptions: {
+			show: {
+				operation: [
+					"imageToVideo"
+				],
+				model: [
+					"mars-v2"
+				]
+			}
+		}
+	},
+	{
 		displayName: "Aspect Ratio",
 		name: "aspect_ratio",
 		type: "string",
 		default: "",
+		description: "Aspect ratio (for Kling 4.0 textToVideo: 21:9, 16:9, 9:16, 1:1, 4:3, 3:4; omitted on Kling 4.0 imageToVideo)",
 		displayOptions: {
 			show: {
 				operation: [
@@ -240,7 +279,7 @@ export const marsResource: FrankLabResourceDefinition = {
 		type: "number",
 		default: "",
 		required: true,
-		description: "Video duration in seconds (3-15)",
+		description: "Video duration in seconds (3-15 for Kling 2.5-3.0, 3-20 for mars-v2-flash, 3-30 for mars-v2)",
 		displayOptions: {
 			show: {
 				operation: [
@@ -268,14 +307,100 @@ export const marsResource: FrankLabResourceDefinition = {
 	{
 		displayName: "Model",
 		name: "model",
-		type: "string",
+		type: "options",
 		default: "",
-		description: "Optional model ID",
+		description: "MARS model ID (mars-v2 = Kling 4.0, mars-v2-flash = Kling 4.0 Flash, mars-v1-5 = Kling 3.0)",
+		options: [
+			{
+				name: "Default (Backend)",
+				value: ""
+			},
+			{
+				name: "Kling 2.5 Turbo (Mars V1 Turbo)",
+				value: "mars-v1-turbo"
+			},
+			{
+				name: "Kling 2.6 (Mars V1)",
+				value: "mars-v1"
+			},
+			{
+				name: "Kling 3.0 (Mars V1.5)",
+				value: "mars-v1-5"
+			},
+			{
+				name: "Kling 4.0 (Mars V2)",
+				value: "mars-v2"
+			},
+			{
+				name: "Kling 4.0 Flash (Mars V2 Flash)",
+				value: "mars-v2-flash"
+			}
+		],
 		displayOptions: {
 			show: {
 				operation: [
 					"textToVideo",
 					"imageToVideo"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Resolution (Kling 4.0)",
+		name: "resolution",
+		type: "options",
+		default: "1080p",
+		description: "Output resolution for Kling 4.0 (mars-v2 supports 720p, 1080p, 4k; mars-v2-flash supports 720p only)",
+		options: [
+			{
+				name: "720p",
+				value: "720p"
+			},
+			{
+				name: "1080p",
+				value: "1080p"
+			},
+			{
+				name: "4K",
+				value: "4k"
+			}
+		],
+		displayOptions: {
+			show: {
+				operation: [
+					"textToVideo",
+					"imageToVideo"
+				],
+				model: [
+					"mars-v2"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Dynamic Range (Kling 4.0)",
+		name: "dynamic_range",
+		type: "options",
+		default: "sdr",
+		description: "Dynamic range for Kling 4.0 (HDR is supported on 1080p and 4K only)",
+		options: [
+			{
+				name: "SDR",
+				value: "sdr"
+			},
+			{
+				name: "HDR (1080p / 4K)",
+				value: "hdr"
+			}
+		],
+		displayOptions: {
+			show: {
+				operation: [
+					"textToVideo",
+					"imageToVideo"
+				],
+				model: [
+					"mars-v2"
 				]
 			}
 		}

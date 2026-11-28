@@ -385,6 +385,152 @@ test('kusok moonOperation defaults backend to moon and heygenAgent maps pageToke
 	assert.equal(heygen.token, 'cursor_2');
 });
 
+test('mars textToVideo and imageToVideo build canonical Kling 4.0 payloads for mars-v2 and mars-v2-flash', () => {
+	const t2v = buildPayload(
+		stubContext({
+			model: 'mars-v2',
+			prompt: 'A golden retriever runs along the beach',
+			resolution: '4k',
+			dynamic_range: 'hdr',
+			duration: 12,
+			aspect_ratio: '4:3',
+		}),
+		0,
+		'mars',
+		'textToVideo',
+	);
+	assert.deepEqual(t2v, {
+		model_name: 'mars-v2',
+		prompt: 'A golden retriever runs along the beach',
+		settings: { resolution: '4k', dynamic_range: 'hdr', duration: 12, aspect_ratio: '4:3' },
+	});
+
+	const i2v = buildPayload(
+		stubContext({
+			model: 'mars-v2',
+			prompt: 'Smooth transition through @Image2',
+			image: 'https://cdn.example.com/start.png',
+			middle_frame_urls: 'https://cdn.example.com/mid1.png, https://cdn.example.com/mid2.png',
+			image_tail: 'https://cdn.example.com/end.png',
+			resolution: '1080p',
+			dynamic_range: 'hdr',
+			duration: 15,
+			aspect_ratio: '16:9',
+		}),
+		0,
+		'mars',
+		'imageToVideo',
+	);
+	assert.deepEqual(i2v, {
+		model_name: 'mars-v2',
+		settings: { resolution: '1080p', dynamic_range: 'hdr', duration: 15 },
+		contents: [
+			{ type: 'prompt', text: 'Smooth transition through @Image2' },
+			{ type: 'first_frame', url: 'https://cdn.example.com/start.png' },
+			{ type: 'middle_frame', url: 'https://cdn.example.com/mid1.png', id: 'Image2' },
+			{ type: 'middle_frame', url: 'https://cdn.example.com/mid2.png', id: 'Image3' },
+			{ type: 'last_frame', url: 'https://cdn.example.com/end.png' },
+		],
+	});
+
+	// Custom contents via payloadJson must strip flat image/prompt/image_tail, and Flash must clamp to 720p without dynamic_range
+	const customContents = buildPayload(
+		stubContext({
+			model: 'mars-v2-flash',
+			prompt: 'stale flat prompt',
+			image: 'https://cdn.example.com/stale.png',
+			resolution: '4k',
+			dynamic_range: 'hdr',
+			payloadJson: JSON.stringify({
+				contents: [
+					{ type: 'prompt', text: 'Custom flash prompt' },
+					{ type: 'first_frame', url: 'https://cdn.example.com/real.png' },
+				],
+				settings: { resolution: '4k', dynamic_range: 'hdr', aspect_ratio: '16:9', duration: 6 },
+			}),
+		}),
+		0,
+		'mars',
+		'imageToVideo',
+	);
+	assert.deepEqual(customContents, {
+		model_name: 'mars-v2-flash',
+		settings: { resolution: '720p', duration: 6 },
+		contents: [
+			{ type: 'prompt', text: 'Custom flash prompt' },
+			{ type: 'first_frame', url: 'https://cdn.example.com/real.png' },
+		],
+	});
+
+	const flashI2v = buildPayload(
+		stubContext({
+			model: 'mars-v2-flash',
+			prompt: 'Camera pushes in',
+			image: 'https://cdn.example.com/start.png',
+			middle_frame_urls: 'https://cdn.example.com/ignored.png',
+			image_tail: 'https://cdn.example.com/ignored-end.png',
+			duration: 8,
+		}),
+		0,
+		'mars',
+		'imageToVideo',
+	);
+	assert.deepEqual(flashI2v, {
+		model_name: 'mars-v2-flash',
+		settings: { resolution: '720p', duration: 8 },
+		contents: [
+			{ type: 'prompt', text: 'Camera pushes in' },
+			{ type: 'first_frame', url: 'https://cdn.example.com/start.png' },
+		],
+	});
+});
+
+test('saturn video builds canonical Kling 4.0 Omni payload with base_video, feature_video, keyframes, elements, voices, audio and 4K HDR', () => {
+	const omni = buildPayload(
+		stubContext({
+			model_name: 'saturn-v2',
+			prompt: '@Element1 speaks with @Voice1 while editing @Video1',
+			resolution: '4k',
+			dynamic_range: 'hdr',
+			duration: 10,
+			aspect_ratio: 'adaptive',
+			audio: 'native',
+			first_frame_url: 'https://cdn.example.com/first.png',
+			middle_frame_urls: 'https://cdn.example.com/mid.png',
+			refer_image_urls: 'https://cdn.example.com/ref.png',
+			last_frame_url: 'https://cdn.example.com/last.png',
+			base_video_url: 'https://cdn.example.com/base.mp4',
+			feature_video_url: 'https://cdn.example.com/ref.mp4',
+			element_ids: 'el_1, el_2',
+			voice_ids: 'v_1',
+		}),
+		0,
+		'saturn',
+		'video',
+	);
+	assert.deepEqual(omni, {
+		model_name: 'saturn-v2',
+		settings: { resolution: '4k', dynamic_range: 'hdr', duration: 10, aspect_ratio: 'adaptive', audio: 'native' },
+		contents: [
+			{ type: 'prompt', text: '@Element1 speaks with @Voice1 while editing @Video1' },
+			{ type: 'first_frame', url: 'https://cdn.example.com/first.png', id: 'Image1' },
+			{ type: 'middle_frame', url: 'https://cdn.example.com/mid.png', id: 'Image2' },
+			{ type: 'refer_image', url: 'https://cdn.example.com/ref.png', id: 'Image3' },
+			{ type: 'last_frame', url: 'https://cdn.example.com/last.png', id: 'Image4' },
+			{ type: 'base_video', url: 'https://cdn.example.com/base.mp4', id: 'Video1' },
+			{ type: 'feature_video', url: 'https://cdn.example.com/ref.mp4', id: 'Video2' },
+			{ type: 'element', element_id: 'el_1', id: 'Element1' },
+			{ type: 'element', element_id: 'el_2', id: 'Element2' },
+			{ type: 'voice', voice_id: 'v_1', id: 'Voice1' },
+		],
+	});
+
+	assert.throws(
+		() => buildPayload(stubContext({ model_name: 'saturn-v2', base_video_url: 'http://127.0.0.1/private.mp4' }), 0, 'saturn', 'video'),
+		/Local media URLs are not allowed/,
+	);
+});
+
 test('jupiter midjourneyImage maps 16-action fields, skips empty image_urls[], and enforces SSRF on image_urls and mask_url', () => {
 	const imagine = buildPayload(
 		stubContext({
@@ -568,6 +714,175 @@ test('economy_rail execution_mode scopes strictly to covered /v1 operations, str
 	assert.deepEqual(byResource.hotCoffe, ['createVideo']);
 	assert.equal(byResource.omni, undefined);
 	assert.equal(byResource.moon, undefined);
+});
+
+
+
+test('jupiter omniImage builds canonical Kling 4.0 Image Standard and Long payloads and rejects private URLs', () => {
+	const std = buildPayload(
+		stubContext({
+			model_name: 'jupiter-v2',
+			prompt: 'Editorial portrait @Element1 with @Image1',
+			kling4_result_type: 'series',
+			series_amount: 'auto',
+			resolution: '8k',
+			aspect_ratio: '3:4',
+			reference_images: 'https://cdn.example.com/ref1.png',
+			element_ids: 'el_img_1',
+			n: 5,
+		}),
+		0,
+		'jupiter',
+		'omniImage',
+	);
+	assert.equal(std.model_name, 'jupiter-v2');
+	assert.equal(std.prompt, undefined);
+	assert.equal(std.n, undefined);
+	assert.deepEqual(std.settings, {
+		result_type: 'series',
+		series_amount: 'auto',
+		resolution: '8k',
+		aspect_ratio: '3:4',
+	});
+	assert.deepEqual(std.contents, [
+		{ type: 'prompt', text: 'Editorial portrait @Element1 with @Image1' },
+		{ type: 'refer_image', url: 'https://cdn.example.com/ref1.png', id: 'Image1' },
+		{ type: 'element', element_id: 'el_img_1', id: 'Element1' },
+	]);
+
+	const ecom = buildPayload(
+		stubContext({
+			model_name: 'jupiter-v2-long',
+			prompt: 'Product detail page for @Image1',
+			kling4_long_skill: 'ecommerce',
+			kling4_long_length: 'long',
+			resolution: '2k',
+			reference_images: 'https://cdn.example.com/prod1.png, https://cdn.example.com/prod2.png',
+		}),
+		0,
+		'jupiter',
+		'omniImage',
+	);
+	assert.equal(ecom.model_name, 'jupiter-v2-long');
+	assert.deepEqual(ecom.settings, { skill: 'ecommerce', length: 'long', resolution: '2k' });
+	assert.deepEqual(ecom.contents, [
+		{ type: 'prompt', text: 'Product detail page for @Image1' },
+		{ type: 'refer_image', url: 'https://cdn.example.com/prod1.png', id: 'Image1' },
+		{ type: 'refer_image', url: 'https://cdn.example.com/prod2.png', id: 'Image2' },
+	]);
+
+	const webpage = buildPayload(
+		stubContext({
+			model_name: 'jupiter-v2-long',
+			prompt: 'SaaS landing page',
+			kling4_long_skill: 'webpage',
+			kling4_long_length: 'long',
+			resolution: '1k',
+			style_refer_image_url: 'https://cdn.example.com/style.png',
+			subject_refer_image_url: 'https://cdn.example.com/subj.png',
+		}),
+		0,
+		'jupiter',
+		'omniImage',
+	);
+	assert.deepEqual(webpage.settings, { skill: 'webpage', resolution: '1k' });
+	assert.deepEqual(webpage.contents, [
+		{ type: 'prompt', text: 'SaaS landing page' },
+		{ type: 'style_refer_image', url: 'https://cdn.example.com/style.png', id: 'Image1' },
+		{ type: 'subject_refer_image', url: 'https://cdn.example.com/subj.png', id: 'Image2' },
+	]);
+
+	// Rejects private SSRF URLs and non-HTTPS URLs
+	assert.throws(
+		() =>
+			buildPayload(
+				stubContext({
+					model_name: 'jupiter-v2',
+					prompt: 'Bad SSRF',
+					reference_images: 'http://127.0.0.1/secret.png',
+				}),
+				0,
+				'jupiter',
+				'omniImage',
+			),
+		/Local media URLs are not allowed/,
+	);
+	assert.throws(
+		() =>
+			buildPayload(
+				stubContext({
+					model_name: 'jupiter-v2',
+					prompt: 'HTTP rejected',
+					reference_images: 'http://cdn.example.com/insecure.png',
+				}),
+				0,
+				'jupiter',
+				'omniImage',
+			),
+		/https:\/\//i,
+	);
+
+	// Enforces combined <= 10 limit, ecommerce 1..3 limit, and valid series_amount
+	assert.throws(
+		() =>
+			buildPayload(
+				stubContext({
+					model_name: 'jupiter-v2',
+					prompt: 'Too many refs+elements',
+					reference_images: Array.from({ length: 6 }, (_, i) => `https://cdn.example.com/${i}.png`).join(','),
+					element_ids: 'e1,e2,e3,e4,e5',
+				}),
+				0,
+				'jupiter',
+				'omniImage',
+			),
+		/10/,
+	);
+	assert.throws(
+		() =>
+			buildPayload(
+				stubContext({
+					model_name: 'jupiter-v2-long',
+					prompt: 'Missing ecommerce refs',
+					kling4_long_skill: 'ecommerce',
+				}),
+				0,
+				'jupiter',
+				'omniImage',
+			),
+		/1 to 3/,
+	);
+	assert.throws(
+		() =>
+			buildPayload(
+				stubContext({
+					model_name: 'jupiter-v2',
+					prompt: 'Invalid series amount',
+					kling4_result_type: 'series',
+					series_amount: 'abc',
+				}),
+				0,
+				'jupiter',
+				'omniImage',
+			),
+		/series_amount/,
+	);
+
+	// Preserves legacy jupiter-v1-5 / payloadJson model_name and scrubs kling4_* helpers
+	const legacy = buildPayload(
+		stubContext({
+			model_name: 'jupiter-v1-5',
+			payloadJson: JSON.stringify({ model_name: 'mist', prompt: 'Legacy mist' }),
+			kling4_result_type: 'series',
+			kling4_long_skill: 'webpage',
+		}),
+		0,
+		'jupiter',
+		'omniImage',
+	);
+	assert.equal(legacy.model_name, 'mist');
+	assert.equal(legacy.kling4_result_type, undefined);
+	assert.equal(legacy.kling4_long_skill, undefined);
 });
 
 
