@@ -416,6 +416,8 @@ export function buildPayload(context: IExecuteFunctions, itemIndex: number, modu
 		'voice',
 		'aspect_ratio',
 		'resolution',
+		'dynamic_range',
+		'audio',
 		'duration',
 		'durationSeconds',
 		'ratio',
@@ -435,6 +437,14 @@ export function buildPayload(context: IExecuteFunctions, itemIndex: number, modu
 		'effect',
 		'effect_scene',
 		'image_tail',
+		'first_frame_url',
+		'middle_frame_urls',
+		'last_frame_url',
+		'refer_image_urls',
+		'base_video_url',
+		'feature_video_url',
+		'element_ids',
+		'voice_ids',
 		'page_num',
 		'page_size',
 		'pageNum',
@@ -585,6 +595,14 @@ export function buildPayload(context: IExecuteFunctions, itemIndex: number, modu
 		'engine',
 		'gender',
 		'pageToken',
+		'kling4_result_type',
+		'series_amount',
+		'kling4_long_skill',
+		'kling4_long_length',
+		'reference_images',
+		'element_ids',
+		'style_refer_image_url',
+		'subject_refer_image_url',
 		'image_urls',
 		'mjVersion',
 		'mjSize',
@@ -629,6 +647,17 @@ export function buildPayload(context: IExecuteFunctions, itemIndex: number, modu
 									: field === 'mjQuality'
 										? 'quality'
 										: field;
+			// Do not let the UI default model_name ('jupiter-v1-5') clobber an explicit model_name in payloadJson.
+			if (
+				moduleName === 'jupiter' &&
+				operation === 'omniImage' &&
+				targetField === 'model_name' &&
+				value === 'jupiter-v1-5' &&
+				typeof payload.model_name === 'string' &&
+				payload.model_name.trim() !== ''
+			) {
+				continue;
+			}
 			payload[targetField] = value;
 		}
 	}
@@ -732,10 +761,342 @@ export function buildPayload(context: IExecuteFunctions, itemIndex: number, modu
 		payload.input = { ...(typeof payload.input === 'object' && payload.input !== null ? (payload.input as Record<string, unknown>) : {}), image: payload.image };
 		delete payload.image;
 	}
+	normalizeKling4VideoPayload(moduleName, operation, payload);
+	if (moduleName === 'jupiter' && operation === 'omniImage') {
+		const rawModel = typeof payload.model_name === 'string' ? payload.model_name.trim().toLowerCase() : '';
+		if (rawModel === 'jupiter-v2' || rawModel === 'jupiter-v2-long') {
+			normalizeKling4ImagePayload(payload, rawModel);
+		} else {
+			for (const key of [
+				'kling4_result_type', 'kling4_long_skill', 'kling4_long_length',
+				'reference_images', 'element_ids', 'style_refer_image_url', 'subject_refer_image_url',
+			]) {
+				delete payload[key];
+			}
+		}
+	}
 
 	validateModulePayload(moduleName, payload);
 
 	return payload;
+}
+
+function splitListField(value: unknown): string[] {
+	if (Array.isArray(value)) {
+		return value.map((entry) => (typeof entry === 'string' ? entry.trim() : String(entry ?? '').trim())).filter(Boolean);
+	}
+	if (typeof value === 'string') {
+		return value
+			.split(/[\n,]+/)
+			.map((entry) => entry.trim())
+			.filter(Boolean);
+	}
+	return [];
+}
+
+const KLING_4_LEGACY_FLAT_KEYS = [
+	'resolution',
+	'dynamic_range',
+	'duration',
+	'aspect_ratio',
+	'audio',
+	'negative_prompt',
+	'mode',
+	'sound',
+	'cfg_scale',
+	'multi_shot',
+	'shot_type',
+	'multi_prompt',
+	'image_list',
+	'video_list',
+	'element_list',
+	'voice_list',
+	'callback_url',
+	'external_task_id',
+	'first_frame_url',
+	'middle_frame_urls',
+	'last_frame_url',
+	'refer_image_urls',
+	'base_video_url',
+	'feature_video_url',
+	'element_ids',
+	'voice_ids',
+] as const;
+
+function normalizeKling4VideoPayload(
+	moduleName: FrankLabModule,
+	operation: string,
+	payload: Record<string, unknown>,
+): void {
+	if (moduleName === 'mars' && (operation === 'textToVideo' || operation === 'imageToVideo')) {
+		const marsModel =
+			typeof payload.model_name === 'string' && payload.model_name
+				? payload.model_name
+				: typeof payload.model === 'string'
+					? payload.model
+					: '';
+		if (marsModel !== 'mars-v2' && marsModel !== 'mars-v2-flash') return;
+		const isFlash = marsModel === 'mars-v2-flash';
+		payload.model_name = marsModel;
+		delete payload.model;
+
+		const existingSettings =
+			typeof payload.settings === 'object' && payload.settings !== null && !Array.isArray(payload.settings)
+				? ({ ...(payload.settings as Record<string, unknown>) } as Record<string, unknown>)
+				: {};
+		if (isFlash) {
+			existingSettings.resolution = '720p';
+			delete existingSettings.dynamic_range;
+		} else {
+			if (payload.resolution !== undefined) existingSettings.resolution = payload.resolution;
+			else if (existingSettings.resolution === undefined) existingSettings.resolution = '1080p';
+			if (payload.dynamic_range !== undefined) existingSettings.dynamic_range = payload.dynamic_range;
+		}
+		if (payload.duration !== undefined) existingSettings.duration = Number(payload.duration);
+		else if (existingSettings.duration === undefined) existingSettings.duration = 10;
+		if (operation === 'textToVideo') {
+			if (payload.aspect_ratio !== undefined) existingSettings.aspect_ratio = payload.aspect_ratio;
+			else if (existingSettings.aspect_ratio === undefined) existingSettings.aspect_ratio = '16:9';
+			delete payload.image;
+			delete payload.image_tail;
+			delete payload.contents;
+		} else {
+			delete existingSettings.aspect_ratio;
+		}
+		payload.settings = existingSettings;
+
+		if (operation === 'imageToVideo') {
+			if (!Array.isArray(payload.contents)) {
+				const contents: Array<Record<string, unknown>> = [];
+				if (typeof payload.prompt === 'string' && payload.prompt.trim()) {
+					contents.push({ type: 'prompt', text: payload.prompt.trim() });
+				}
+				let imageIdx = 0;
+				const firstFrame = typeof payload.image === 'string' ? payload.image.trim() : '';
+				if (firstFrame) {
+					imageIdx += 1;
+					contents.push({ type: 'first_frame', url: firstFrame });
+				}
+				if (!isFlash) {
+					const middleFrames = splitListField(payload.middle_frame_urls);
+					for (const url of middleFrames) {
+						imageIdx += 1;
+						contents.push({ type: 'middle_frame', url, id: `Image${imageIdx}` });
+					}
+					const lastFrame = typeof payload.image_tail === 'string' ? payload.image_tail.trim() : '';
+					if (lastFrame) {
+						contents.push({ type: 'last_frame', url: lastFrame });
+					}
+				}
+				payload.contents = contents;
+			}
+			delete payload.prompt;
+			delete payload.image;
+			delete payload.image_tail;
+		}
+		for (const key of KLING_4_LEGACY_FLAT_KEYS) delete payload[key];
+		return;
+	}
+
+	if (moduleName === 'saturn' && operation === 'video') {
+		const saturnModel = typeof payload.model_name === 'string' ? payload.model_name : '';
+		if (saturnModel !== 'saturn-v2' && saturnModel !== 'saturn-v2-flash') return;
+		const isFlash = saturnModel === 'saturn-v2-flash';
+
+		const existingSettings =
+			typeof payload.settings === 'object' && payload.settings !== null && !Array.isArray(payload.settings)
+				? ({ ...(payload.settings as Record<string, unknown>) } as Record<string, unknown>)
+				: {};
+		if (isFlash) {
+			existingSettings.resolution = '720p';
+			delete existingSettings.dynamic_range;
+		} else {
+			if (payload.resolution !== undefined) existingSettings.resolution = payload.resolution;
+			else if (existingSettings.resolution === undefined) existingSettings.resolution = '1080p';
+			if (payload.dynamic_range !== undefined) existingSettings.dynamic_range = payload.dynamic_range;
+		}
+		if (payload.duration !== undefined) existingSettings.duration = Number(payload.duration);
+		else if (existingSettings.duration === undefined) existingSettings.duration = 10;
+		if (payload.aspect_ratio !== undefined) existingSettings.aspect_ratio = payload.aspect_ratio;
+		else if (existingSettings.aspect_ratio === undefined) existingSettings.aspect_ratio = 'adaptive';
+		if (payload.audio !== undefined) existingSettings.audio = payload.audio;
+		payload.settings = existingSettings;
+
+		if (!Array.isArray(payload.contents)) {
+			const contents: Array<Record<string, unknown>> = [];
+			if (typeof payload.prompt === 'string' && payload.prompt.trim()) {
+				contents.push({ type: 'prompt', text: payload.prompt.trim() });
+			}
+			let imageIdx = 0;
+			let videoIdx = 0;
+			const firstFrame = typeof payload.first_frame_url === 'string' ? payload.first_frame_url.trim() : '';
+			if (firstFrame) {
+				imageIdx += 1;
+				contents.push({ type: 'first_frame', url: firstFrame, id: `Image${imageIdx}` });
+			}
+			if (!isFlash) {
+				for (const url of splitListField(payload.middle_frame_urls)) {
+					imageIdx += 1;
+					contents.push({ type: 'middle_frame', url, id: `Image${imageIdx}` });
+				}
+			}
+			for (const url of splitListField(payload.refer_image_urls)) {
+				imageIdx += 1;
+				contents.push({ type: 'refer_image', url, id: `Image${imageIdx}` });
+			}
+			if (!isFlash) {
+				const lastFrame = typeof payload.last_frame_url === 'string' ? payload.last_frame_url.trim() : '';
+				if (lastFrame) {
+					imageIdx += 1;
+					contents.push({ type: 'last_frame', url: lastFrame, id: `Image${imageIdx}` });
+				}
+			}
+			const baseVideo = typeof payload.base_video_url === 'string' ? payload.base_video_url.trim() : '';
+			if (baseVideo) {
+				videoIdx += 1;
+				contents.push({ type: 'base_video', url: baseVideo, id: `Video${videoIdx}` });
+			}
+			const featureVideo = typeof payload.feature_video_url === 'string' ? payload.feature_video_url.trim() : '';
+			if (featureVideo) {
+				videoIdx += 1;
+				contents.push({ type: 'feature_video', url: featureVideo, id: `Video${videoIdx}` });
+			}
+			splitListField(payload.element_ids).forEach((elementId, index) => {
+				contents.push({ type: 'element', element_id: elementId, id: `Element${index + 1}` });
+			});
+			if (!isFlash) {
+				splitListField(payload.voice_ids).forEach((voiceId, index) => {
+					contents.push({ type: 'voice', voice_id: voiceId, id: `Voice${index + 1}` });
+				});
+			}
+			payload.contents = contents;
+		}
+		delete payload.prompt;
+		delete payload.image;
+		delete payload.image_tail;
+		for (const key of KLING_4_LEGACY_FLAT_KEYS) delete payload[key];
+	}
+}
+
+function validateKling4HttpsMediaUrl(rawUrl: string): string {
+	const cleaned = rawUrl.trim();
+	validatePublicMediaUrl(cleaned);
+	const parsed = new URL(cleaned);
+	if (parsed.protocol !== 'https:') {
+		throw new Error('Kling 4.0 Image media URLs must use https://');
+	}
+	return cleaned;
+}
+
+function normalizeKling4ImagePayload(payload: Record<string, unknown>, model: 'jupiter-v2' | 'jupiter-v2-long'): void {
+	payload.model_name = model;
+	const hasExplicitContents = Array.isArray(payload.contents);
+	const existingSettings =
+		typeof payload.settings === 'object' && payload.settings !== null && !Array.isArray(payload.settings)
+			? ({ ...(payload.settings as Record<string, unknown>) })
+			: {};
+
+	if (model === 'jupiter-v2-long') {
+		const rawSkill = String(existingSettings.skill ?? payload.kling4_long_skill ?? 'ecommerce').trim().toLowerCase();
+		const skill = rawSkill === 'webpage' ? 'webpage' : 'ecommerce';
+		const rawRes = String(existingSettings.resolution ?? payload.resolution ?? '2k').trim().toLowerCase();
+		const resolution = rawRes === '1k' ? '1k' : '2k';
+		if (!hasExplicitContents) {
+			const contents: Array<Record<string, unknown>> = [];
+			if (typeof payload.prompt === 'string' && payload.prompt.trim()) {
+				contents.push({ type: 'prompt', text: payload.prompt.trim() });
+			}
+			if (skill === 'ecommerce') {
+				const refUrls = splitListField(payload.reference_images);
+				if (refUrls.length < 1 || refUrls.length > 3) {
+					throw new Error('Kling 4.0 Long Image ecommerce skill requires 1 to 3 reference image URLs');
+				}
+				refUrls.forEach((url, idx) => {
+					const safeUrl = validateKling4HttpsMediaUrl(url);
+					contents.push({ type: 'refer_image', url: safeUrl, id: `Image${idx + 1}` });
+				});
+			} else {
+				let webIdx = 0;
+				const styleUrl = typeof payload.style_refer_image_url === 'string' ? payload.style_refer_image_url.trim() : '';
+				if (styleUrl) {
+					const safeUrl = validateKling4HttpsMediaUrl(styleUrl);
+					webIdx += 1;
+					contents.push({ type: 'style_refer_image', url: safeUrl, id: `Image${webIdx}` });
+				}
+				const subjectUrl = typeof payload.subject_refer_image_url === 'string' ? payload.subject_refer_image_url.trim() : '';
+				if (subjectUrl) {
+					const safeUrl = validateKling4HttpsMediaUrl(subjectUrl);
+					webIdx += 1;
+					contents.push({ type: 'subject_refer_image', url: safeUrl, id: `Image${webIdx}` });
+				}
+			}
+			payload.contents = contents;
+		}
+		if (skill === 'ecommerce') {
+			const rawLength = String(existingSettings.length ?? payload.kling4_long_length ?? 'medium').trim().toLowerCase();
+			const length = rawLength === 'short' || rawLength === 'long' ? rawLength : 'medium';
+			payload.settings = { skill: 'ecommerce', length, resolution };
+		} else {
+			payload.settings = { skill: 'webpage', resolution };
+		}
+	} else {
+		const rawResultType = String(existingSettings.result_type ?? payload.kling4_result_type ?? 'single').trim().toLowerCase();
+		const result_type = rawResultType === 'series' ? 'series' : 'single';
+		const rawRes = String(existingSettings.resolution ?? payload.resolution ?? '2k').trim().toLowerCase();
+		const resolution = rawRes === '4k' || rawRes === '8k' ? rawRes : '2k';
+		const rawAr = String(existingSettings.aspect_ratio ?? payload.aspect_ratio ?? 'auto').trim().toLowerCase();
+		const aspect_ratio = rawAr || 'auto';
+		if (!hasExplicitContents) {
+			const contents: Array<Record<string, unknown>> = [];
+			if (typeof payload.prompt === 'string' && payload.prompt.trim()) {
+				contents.push({ type: 'prompt', text: payload.prompt.trim() });
+			}
+			const refUrls = splitListField(payload.reference_images);
+			const elementIds = splitListField(payload.element_ids);
+			if (refUrls.length + elementIds.length > 10) {
+				throw new Error('Kling 4.0 Image allows at most 10 combined reference images and elements');
+			}
+			refUrls.forEach((url, idx) => {
+				const safeUrl = validateKling4HttpsMediaUrl(url);
+				contents.push({ type: 'refer_image', url: safeUrl, id: `Image${idx + 1}` });
+			});
+			elementIds.forEach((element_id, idx) => {
+				contents.push({ type: 'element', element_id, id: `Element${idx + 1}` });
+			});
+			payload.contents = contents;
+		}
+		const settings: Record<string, unknown> = { result_type, resolution, aspect_ratio };
+		if (result_type === 'series') {
+			const rawAmount = existingSettings.series_amount ?? payload.series_amount ?? 'auto';
+			const normAmount = String(rawAmount).trim().toLowerCase();
+			if (normAmount === 'auto' || normAmount === '') {
+				settings.series_amount = 'auto';
+			} else {
+				const parsed = Number(normAmount);
+				if (!Number.isInteger(parsed) || parsed < 2 || parsed > 10) {
+					throw new Error('Kling 4.0 Image series_amount must be "auto" or an integer between 2 and 10');
+				}
+				settings.series_amount = parsed;
+			}
+		} else {
+			const rawN = existingSettings.n ?? payload.n ?? 1;
+			const parsedN = Number(rawN);
+			if (!Number.isInteger(parsedN) || parsedN < 1 || parsedN > 9) {
+				throw new Error('Kling 4.0 Image single count n must be an integer between 1 and 9');
+			}
+			settings.n = parsedN;
+		}
+		payload.settings = settings;
+	}
+
+	// Scrub all flat helper/legacy keys so Kling 4.0 Image receives canonical payload only.
+	for (const key of [
+		'prompt', 'resolution', 'aspect_ratio', 'n', 'quality',
+		'kling4_result_type', 'series_amount', 'kling4_long_skill', 'kling4_long_length',
+		'reference_images', 'element_ids', 'style_refer_image_url', 'subject_refer_image_url',
+	]) {
+		delete payload[key];
+	}
 }
 
 export function validateModulePayload(moduleName: FrankLabModule, payload: Record<string, unknown>): void {
@@ -744,6 +1105,26 @@ export function validateModulePayload(moduleName: FrankLabModule, payload: Recor
 }
 
 function validateConditionalUrls(moduleName: FrankLabModule, payload: Record<string, unknown>): void {
+	if ((moduleName === 'mars' || moduleName === 'saturn') && Array.isArray(payload.contents)) {
+		for (const entry of payload.contents) {
+			if (typeof entry === 'object' && entry !== null && !Array.isArray(entry)) {
+				const url = (entry as Record<string, unknown>).url;
+				if (typeof url === 'string' && url.trim()) {
+					validatePublicMediaUrl(url.trim());
+				}
+			}
+		}
+	}
+	if (moduleName === 'jupiter' && Array.isArray(payload.contents)) {
+		for (const item of payload.contents) {
+			if (typeof item === 'object' && item !== null && !Array.isArray(item)) {
+				const url = (item as Record<string, unknown>).url;
+				if (typeof url === 'string' && url.trim()) {
+					validateKling4HttpsMediaUrl(url.trim());
+				}
+			}
+		}
+	}
 	if (moduleName === 'social') {
 		const mediaEntries = Array.isArray(payload.media)
 			? payload.media

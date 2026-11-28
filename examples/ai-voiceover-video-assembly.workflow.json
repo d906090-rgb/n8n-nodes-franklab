@@ -16,7 +16,7 @@
 			"parameters": {
 				"resource": "volna",
 				"operation": "textToSpeech",
-				"text": "Автоматизируйте выпуск видеороликов через единый медиа-API в рублях.",
+				"text": "Automate video production workflows through a unified AI media API.",
 				"waitForCompletion": true
 			},
 			"type": "@apergrex/n8n-nodes-franklab.frankLab",

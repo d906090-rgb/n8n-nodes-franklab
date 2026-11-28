@@ -115,14 +115,276 @@ export const saturnResource: FrankLabResourceDefinition = {
 	{
 		displayName: "Model",
 		name: "model_name",
+		type: "options",
+		default: "",
+		description: "SATURN model ID (saturn-v2 = Kling 4.0 Omni, saturn-v2-flash = Kling 4.0 Flash Omni, saturn-v1-5 = Kling 3.0 Omni)",
+		options: [
+			{
+				name: "Default (Backend)",
+				value: ""
+			},
+			{
+				name: "Kling 3.0 Omni (Saturn V1.5)",
+				value: "saturn-v1-5"
+			},
+			{
+				name: "Kling 4.0 Flash Omni (Saturn V2 Flash)",
+				value: "saturn-v2-flash"
+			},
+			{
+				name: "Kling 4.0 Omni (Saturn V2)",
+				value: "saturn-v2"
+			},
+			{
+				name: "Kling Video O1 (Saturn V1)",
+				value: "saturn-v1"
+			}
+		],
+		displayOptions: {
+			show: {
+				operation: [
+					"video"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Model",
+		name: "model_name",
 		type: "string",
 		default: "",
 		description: "Optional SATURN model ID",
 		displayOptions: {
 			show: {
 				operation: [
-					"video",
 					"multiImageToVideo"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Resolution (Kling 4.0 Omni)",
+		name: "resolution",
+		type: "options",
+		default: "1080p",
+		description: "Output resolution for Kling 4.0 Omni (saturn-v2: 720p, 1080p, 4k; saturn-v2-flash: 720p only)",
+		options: [
+			{
+				name: "720p",
+				value: "720p"
+			},
+			{
+				name: "1080p",
+				value: "1080p"
+			},
+			{
+				name: "4K",
+				value: "4k"
+			}
+		],
+		displayOptions: {
+			show: {
+				operation: [
+					"video"
+				],
+				model_name: [
+					"saturn-v2"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Dynamic Range (Kling 4.0 Omni)",
+		name: "dynamic_range",
+		type: "options",
+		default: "sdr",
+		description: "Dynamic range for Kling 4.0 Omni (HDR is supported on 1080p and 4K only)",
+		options: [
+			{
+				name: "SDR",
+				value: "sdr"
+			},
+			{
+				name: "HDR (1080p / 4K)",
+				value: "hdr"
+			}
+		],
+		displayOptions: {
+			show: {
+				operation: [
+					"video"
+				],
+				model_name: [
+					"saturn-v2"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Audio Mode (Kling 4.0 Omni)",
+		name: "audio",
+		type: "options",
+		default: "native",
+		description: "Generate native audio or preserve original audio from base_video / feature_video (incompatible with voice_ids)",
+		options: [
+			{
+				name: "Native (Generate Audio)",
+				value: "native"
+			},
+			{
+				name: "Original (Keep Input Video Audio)",
+				value: "original"
+			}
+		],
+		displayOptions: {
+			show: {
+				operation: [
+					"video"
+				],
+				model_name: [
+					"saturn-v2",
+					"saturn-v2-flash"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Base Video URL (Edit Mode)",
+		name: "base_video_url",
+		type: "string",
+		default: "",
+		description: "Optional public http(s) URL of source video to edit (base_video) on Kling 4.0 Omni",
+		displayOptions: {
+			show: {
+				operation: [
+					"video"
+				],
+				model_name: [
+					"saturn-v2",
+					"saturn-v2-flash"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Feature Video URL (Reference)",
+		name: "feature_video_url",
+		type: "string",
+		default: "",
+		description: "Optional public http(s) URL of reference video (feature_video) on Kling 4.0 Omni",
+		displayOptions: {
+			show: {
+				operation: [
+					"video"
+				],
+				model_name: [
+					"saturn-v2",
+					"saturn-v2-flash"
+				]
+			}
+		}
+	},
+	{
+		displayName: "First Frame URL (Kling 4.0 Omni)",
+		name: "first_frame_url",
+		type: "string",
+		default: "",
+		description: "Optional public http(s) URL of the first frame",
+		displayOptions: {
+			show: {
+				operation: [
+					"video"
+				],
+				model_name: [
+					"saturn-v2",
+					"saturn-v2-flash"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Middle Frame URLs (Kling 4.0 Omni)",
+		name: "middle_frame_urls",
+		type: "string",
+		default: "",
+		description: "Optional comma or newline separated public http(s) URLs of middle keyframes (saturn-v2 only)",
+		displayOptions: {
+			show: {
+				operation: [
+					"video"
+				],
+				model_name: [
+					"saturn-v2"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Last Frame URL (Kling 4.0 Omni)",
+		name: "last_frame_url",
+		type: "string",
+		default: "",
+		description: "Optional public http(s) URL of the last frame (saturn-v2 only)",
+		displayOptions: {
+			show: {
+				operation: [
+					"video"
+				],
+				model_name: [
+					"saturn-v2"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Reference Image URLs (Kling 4.0 Omni)",
+		name: "refer_image_urls",
+		type: "string",
+		default: "",
+		description: "Optional comma or newline separated public http(s) URLs of reference images",
+		displayOptions: {
+			show: {
+				operation: [
+					"video"
+				],
+				model_name: [
+					"saturn-v2",
+					"saturn-v2-flash"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Element IDs (Kling 4.0 Omni)",
+		name: "element_ids",
+		type: "string",
+		default: "",
+		description: "Optional comma or newline separated KUSOK element IDs (up to 7)",
+		displayOptions: {
+			show: {
+				operation: [
+					"video"
+				],
+				model_name: [
+					"saturn-v2",
+					"saturn-v2-flash"
+				]
+			}
+		}
+	},
+	{
+		displayName: "Voice IDs (Kling 4.0 Omni)",
+		name: "voice_ids",
+		type: "string",
+		default: "",
+		description: "Optional comma or newline separated Kling voice IDs (up to 3, saturn-v2 only, incompatible with audio=original)",
+		displayOptions: {
+			show: {
+				operation: [
+					"video"
+				],
+				model_name: [
+					"saturn-v2"
 				]
 			}
 		}
@@ -203,6 +465,7 @@ export const saturnResource: FrankLabResourceDefinition = {
 		name: "aspect_ratio",
 		type: "string",
 		default: "",
+		description: "Aspect ratio (for Kling 4.0 Omni: 21:9, 16:9, 9:16, 1:1, 4:3, 3:4, or adaptive)",
 		displayOptions: {
 			show: {
 				operation: [
@@ -220,7 +483,7 @@ export const saturnResource: FrankLabResourceDefinition = {
 		type: "number",
 		default: "",
 		required: true,
-		description: "Video duration in seconds",
+		description: "Video duration in seconds (3-15 for Kling 3.0, 3-20 for saturn-v2-flash, 3-30 for saturn-v2)",
 		displayOptions: {
 			show: {
 				operation: [

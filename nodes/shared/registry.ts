@@ -965,7 +965,7 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 	// KUSOK — Make parity addition (unified Moon H5 verification & Seedance asset operations).
 	'kusok.moonOperation': makeCapabilityEndpoint('kusok', 'franklab-kusok', 'moonOperation', 'POST', '/make/kusok/operation', 'Moon backend operation payload ({ backend: "moon", action, ... })', { costFields: [], allowHttpStatuses: [409, 410] }),
 
-	// SOCIAL — FrankLab СОЦ СЕТИ (14 networks, status, manage, insights, multiposts, RPC pickers).
+	// SOCIAL — FrankLab Social Networks (14 networks, status, manage, insights, multiposts, RPC pickers).
 	'social.publish': makeCapabilityEndpoint('social', 'franklab-social', 'publish', 'POST', '/make/social/publish', 'single-network social publish payload (14 platforms)', { checkCodeEnvelopeError: true }),
 	'social.getStatus': makeCapabilityEndpoint('social', 'franklab-social', 'getStatus', 'GET', '/make/social/status/:releaseId', 'releaseId path parameter + optional poll query', { queryFields: ['poll'], checkCodeEnvelopeError: true }),
 	'social.listReleases': makeCapabilityEndpoint('social', 'franklab-social', 'listReleases', 'GET', '/make/social/releases', 'optional platform, status, from, to, limit, cursor query params', { outputExtractor: LIST_OUTPUT, costFields: [], queryFields: ['platform', 'status', 'from', 'to', 'limit', 'cursor'], checkCodeEnvelopeError: true }),
@@ -999,7 +999,7 @@ export const ENDPOINT_REGISTRY: Record<string, EndpointDefinition> = {
 	'narezka.importSource': jobsEndpoint('narezka', 'importSource', 'POST', '/franklab/jobs/clips/sources', 'closed { sourceUrl } payload + Idempotency-Key header', { idempotencyHeader: true, costFields: [], routeFamily: 'franklab-narezka' }),
 	'narezka.getImportStatus': jobsEndpoint('narezka', 'getImportStatus', 'GET', '/franklab/jobs/clips/sources/:importId', 'importId UUID path parameter', { costFields: [], routeFamily: 'franklab-narezka' }),
 
-	// VARIANT PACK — Batch video unique copies (УНИКАЛИЗАЦИЯ).
+	// VARIANT PACK — Batch video unique copies (uniquification).
 	'variantPack.create': jobsEndpoint('variantPack', 'create', 'POST', '/franklab/jobs/montage', 'variant_pack montage payload (videoUrl, copies, variantPreset, ...)', { routeFamily: 'franklab-variant-pack' }),
 	'variantPack.getStatus': jobsEndpoint('variantPack', 'getStatus', 'GET', '/franklab/jobs/:jobId', 'jobId path parameter', { routeFamily: 'franklab-variant-pack' }),
 	'variantPack.estimate': jobsEndpoint('variantPack', 'estimate', 'GET', '/franklab/jobs/montage/estimate', 'variant_pack estimate query parameters', { costFields: [], queryFields: ['operation', 'copies', 'variantPreset', 'variantCustomSettings', 'captions'], routeFamily: 'franklab-variant-pack' }),

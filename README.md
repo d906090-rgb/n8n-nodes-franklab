@@ -292,6 +292,7 @@ npm run scan
 
 ## Version History
 
+- **`0.5.1`**: Translated remaining non-English source comments in `nodes/shared/registry.ts` and voiceover sample text in `examples/ai-voiceover-video-assembly.workflow.json` to English for n8n Verified Community Node compliance, and added a test guard enforcing English-only Latin script across repository and package files.
 - **`0.5.0`**: Added the full 16-action Midjourney contour (`midjourneyImage`, `getMidjourneyImageStatus`, `midjourneyVideo`, `getMidjourneyVideoStatus`) on `JUPITER`, optional `Economy Pool (Draft)` (`economy_rail`) routing on `JUPITER`, `MARS`, `SATURN`, and `Hot Coffee` (`createVideo`), unshadowed `imageUrl`/`video_url`/`videos`/`prompts`/`buttons`/`modal_ready` extraction, `modal` terminal polling support, and `string[]` `image_urls` / `mask_url` SSRF validation.
 - **`0.4.0`**: Consolidated all 30 modules into a single unified `FrankLab` action node (`Resource → Operation`) and wrapped HTTP/API errors in `NodeApiError` to satisfy n8n Verified Community Node review requirements.
 - **`0.3.1`**: Organized operations under `Resource` groups across multi-operation modules and refined `VOLNA` labels for `@n8n/scan-community-package` zero-warning compliance.
